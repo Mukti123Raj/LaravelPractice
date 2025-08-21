@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Rocket } from 'lucide-vue-next';
+import { useAdmin } from '@/composables/useAdmin';
 
 interface Product {
     id: number;
@@ -27,6 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 const page = usePage();
+const { isAdmin } = useAdmin();
 
 const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to delete this product?')) {
@@ -49,7 +51,7 @@ const handleDelete = (id: number) => {
                     </AlertDescription>
                 </Alert>
             </div>
-            <Link :href="route('products.create')"> <Button>Create a Product</Button></Link>
+            <Link :href="route('products.create')" v-if="isAdmin()"> <Button>Create a Product</Button></Link>
             <Table>
                 <TableCaption>A list of your Product.</TableCaption>
                 <TableHeader>
@@ -68,8 +70,15 @@ const handleDelete = (id: number) => {
                         <TableCell>{{ product.price }}</TableCell>
                         <TableCell>{{ product.description }}</TableCell>
                         <TableCell class="text-center space-x-2">
-                            <Link :href="route('products.edit', {id: product.id} )"><Button class="bg-slate-600">Edit</Button></Link>
-                            <Button class="bg-red-600" @click="handleDelete(product.id)">Delete</Button>
+                            <Link :href="route('products.edit', {id: product.id} )" v-if="isAdmin()"><Button class="bg-slate-600">Edit</Button></Link>
+                            <Button 
+                                class="bg-red-600" 
+                                :class="{ 'opacity-50 cursor-not-allowed': !isAdmin() }"
+                                @click="isAdmin() ? handleDelete(product.id) : null"
+                                :disabled="!isAdmin()"
+                            >
+                                Delete
+                            </Button>
                         </TableCell>
                     </TableRow>
                 </TableBody>

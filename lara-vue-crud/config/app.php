@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This email address is used to identify admin users who have access
+    | to create, edit, and delete products.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'muktirajbhusal@gmail.com'),
+
 ];
