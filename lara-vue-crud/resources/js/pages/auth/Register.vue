@@ -4,6 +4,7 @@ import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
@@ -13,6 +14,7 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
+    role: 'customer',
 });
 
 const submit = () => {
@@ -41,12 +43,32 @@ const submit = () => {
                 </div>
 
                 <div class="grid gap-2">
+                    <Label for="role">You are a</Label>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <Button variant="outline" class="w-full justify-start" :tabindex="3">
+                                {{ form.role === 'customer' ? 'Customer' : 'Seller' }}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent class="w-full">
+                            <DropdownMenuItem @click="form.role = 'customer'">
+                                Customer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem @click="form.role = 'seller'">
+                                Seller
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <InputError :message="form.errors.role" />
+                </div>
+
+                <div class="grid gap-2">
                     <Label for="password">Password</Label>
                     <Input
                         id="password"
                         type="password"
                         required
-                        :tabindex="3"
+                        :tabindex="4"
                         autocomplete="new-password"
                         v-model="form.password"
                         placeholder="Password"
@@ -60,7 +82,7 @@ const submit = () => {
                         id="password_confirmation"
                         type="password"
                         required
-                        :tabindex="4"
+                        :tabindex="5"
                         autocomplete="new-password"
                         v-model="form.password_confirmation"
                         placeholder="Confirm password"
@@ -68,7 +90,7 @@ const submit = () => {
                     <InputError :message="form.errors.password_confirmation" />
                 </div>
 
-                <Button type="submit" class="mt-2 w-full" tabindex="5" :disabled="form.processing">
+                <Button type="submit" class="mt-2 w-full" tabindex="6" :disabled="form.processing">
                     <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
                     Create account
                 </Button>
@@ -76,7 +98,7 @@ const submit = () => {
 
             <div class="text-center text-sm text-muted-foreground">
                 Already have an account?
-                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="6">Log in</TextLink>
+                <TextLink :href="route('login')" class="underline underline-offset-4" :tabindex="7">Log in</TextLink>
             </div>
         </form>
     </AuthBase>

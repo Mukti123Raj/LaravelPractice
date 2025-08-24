@@ -24,6 +24,8 @@ class ProductController extends Controller
              'description' => 'required|string',
          ]);
 
+         $data['seller_id'] = auth()->id();
+
          Product::create($data);
 
          return redirect()->route('products.index')->with('message', 'Product Added SuccessFully');

@@ -4,6 +4,7 @@ interface User {
     id: number;
     name: string;
     email: string;
+    role: string;
 }
 
 export function useAdmin() {
@@ -11,7 +12,7 @@ export function useAdmin() {
     
     const isAdmin = (): boolean => {
         const user = page.props.auth?.user as User;
-        return user?.email === 'muktirajbhusal@gmail.com';
+        return user?.email === 'muktirajbhusal@gmail.com' || user?.role === 'admin';
     };
 
     const getCurrentUser = (): User | null => {
