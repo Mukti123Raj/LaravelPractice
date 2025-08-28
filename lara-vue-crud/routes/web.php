@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductListingController;
 use App\Http\Middleware\AdminMiddleware;
@@ -34,6 +35,16 @@ Route::middleware(['auth', 'verified'])->group(function(){
         Route::get('/product-listings/{productListing}/edit', [ProductListingController::class, 'edit'])->name('product-listings.edit');
         Route::put('/product-listings/{productListing}', [ProductListingController::class, 'update'])->name('product-listings.update');
         Route::delete('/product-listings/{productListing}', [ProductListingController::class, 'destroy'])->name('product-listings.destroy');
+    });
+
+    // Customers - Admin only
+    Route::middleware([AdminMiddleware::class])->group(function () {
+        Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
+        Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     });
 });
 

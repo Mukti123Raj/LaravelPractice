@@ -48,5 +48,8 @@ class DatabaseSeeder extends Seeder
             'description' => 'Wireless noise-canceling headphones',
             'seller_id' => $seller->id,
         ]);
+
+        // Seed customers
+        $this->call(CustomerSeeder::class);
     }
 }
