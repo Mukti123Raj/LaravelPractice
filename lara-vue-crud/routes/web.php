@@ -3,6 +3,7 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductListingController;
+use App\Http\Controllers\SalesOrderController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdminOrSellerMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,16 @@ Route::middleware(['auth', 'verified'])->group(function(){
         Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
         Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+    });
+
+    // Sales Orders - Admin only
+    Route::middleware([AdminMiddleware::class])->group(function () {
+        Route::get('/sales-orders', [SalesOrderController::class, 'index'])->name('sales-orders.index');
+        Route::get('/sales-orders/create', [SalesOrderController::class, 'create'])->name('sales-orders.create');
+        Route::post('/sales-orders', [SalesOrderController::class, 'store'])->name('sales-orders.store');
+        Route::get('/sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])->name('sales-orders.edit');
+        Route::put('/sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
+        Route::delete('/sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy');
     });
 });
 

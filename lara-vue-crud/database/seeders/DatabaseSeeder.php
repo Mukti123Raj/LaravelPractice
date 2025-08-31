@@ -27,6 +27,13 @@ class DatabaseSeeder extends Seeder
             'role' => 'seller',
         ]);
 
+        // Create admin user
+        User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'mukti@gmail.com',
+            'role' => 'seller', // Using seller role for now since admin is determined by email
+        ]);
+
         // Create some sample products
         \App\Models\Product::create([
             'name' => 'Laptop',

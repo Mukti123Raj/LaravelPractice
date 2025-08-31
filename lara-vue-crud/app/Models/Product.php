@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
-    protected $fillable = ['name', 'price', 'description'];
+    protected $fillable = ['name', 'price', 'description', 'seller_id'];
 
     protected $casts = [
         'price' => 'decimal:2',
@@ -23,6 +23,8 @@ class Product extends Model
     {
         return $this->belongsTo(User::class, 'seller_id');
     }
+
+
 
     protected static function boot()
     {
