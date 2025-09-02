@@ -19,7 +19,7 @@ Route::get('dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function(){
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-    
+
     Route::middleware([AdminOrSellerMiddleware::class])->group(function () {
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
@@ -56,6 +56,11 @@ Route::middleware(['auth', 'verified'])->group(function(){
         Route::get('/sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])->name('sales-orders.edit');
         Route::put('/sales-orders/{salesOrder}', [SalesOrderController::class, 'update'])->name('sales-orders.update');
         Route::delete('/sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])->name('sales-orders.destroy');
+    });
+
+    // Email - Admin only
+    Route::middleware([AdminMiddleware::class])->group(function () {
+        Route::post('/emails/send', [\App\Http\Controllers\EmailController::class, 'send'])->name('emails.send');
     });
 });
 

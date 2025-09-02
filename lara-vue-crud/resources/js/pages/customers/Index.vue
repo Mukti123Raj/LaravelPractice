@@ -32,14 +32,22 @@
             <TableCell>{{ customer.id }}</TableCell>
             <TableCell>{{ customer.name }}</TableCell>
             <TableCell>{{ customer.phone_number }}</TableCell>
-            <TableCell>{{ customer.email }}</TableCell>
+            <TableCell>
+              <a
+                href="#"
+                style="color:blue;text-decoration:underline"
+                @click.prevent="openEmailDialog(customer.email, customer.id)"
+              >
+                {{ customer.email }}
+              </a>
+            </TableCell>
             <TableCell>{{ customer.country }}</TableCell>
             <TableCell className="text-center space-x-2">
               <Link :href="route('customers.edit', customer.id)" v-if="isAdmin()">
                 <Button className="bg-slate-600">Edit</Button>
               </Link>
-              <Button 
-                className="bg-red-600" 
+              <Button
+                className="bg-red-600"
                 :className="{ 'opacity-50 cursor-not-allowed': !isAdmin() }"
                 @click="isAdmin() ? deleteCustomer(customer.id) : null"
                 :disabled="!isAdmin()"
@@ -51,51 +59,80 @@
         </TableBody>
       </Table>
       <div></div>
+      <SendEmailDialog
+        :open="showEmailDialog"
+        :customerEmail="selectedCustomerEmail"
+        :customerId="selectedCustomerId"
+        @close="closeEmailDialog"
+      />
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Rocket } from 'lucide-vue-next';
 import { useAdmin } from '@/composables/useAdmin';
+import SendEmailDialog from '@/components/SendEmailDialog.vue';
 
 interface Customer {
-    id: number;
-    name: string;
-    phone_number: string;
-    email: string;
-    address_line_1: string;
-    address_line_2?: string;
-    country: string;
-    state: string;
-    city: string;
+  id: number;
+  name: string;
+  phone_number: string;
+  email: string;
+  address_line_1: string;
+  address_line_2?: string;
+  country: string;
+  state: string;
+  city: string;
 }
 
 interface Props {
-    customers: Customer[];
+  customers: Customer[];
 }
 
 const props = defineProps<Props>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Customers',
-        href: '/customers',
-    },
+  {
+    title: 'Customers',
+    href: '/customers',
+  },
 ];
 
 const page = usePage();
 const { isAdmin } = useAdmin();
 
+const showEmailDialog = ref(false);
+const selectedCustomerEmail = ref('');
+const selectedCustomerId = ref<number | null>(null);
+
+function openEmailDialog(email: string, id: number) {
+  selectedCustomerEmail.value = email;
+  selectedCustomerId.value = id;
+  showEmailDialog.value = true;
+}
+function closeEmailDialog() {
+  showEmailDialog.value = false;
+}
+
 const deleteCustomer = (id: number) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-        router.delete(route('customers.destroy', { id }));
-    }
+  if (confirm('Are you sure you want to delete this customer?')) {
+    router.delete(route('customers.destroy', { id }));
+  }
 }
 </script>
