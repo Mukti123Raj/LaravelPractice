@@ -18,6 +18,8 @@ class TeacherFactory extends Factory
     {
         return [
             //
+            'name'  => $this->faker->name(),   // ✅ give each teacher a name
+            'email' => $this->faker->unique()->safeEmail(),
         ];
     }
 }
