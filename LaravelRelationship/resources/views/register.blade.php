@@ -29,17 +29,26 @@
                 <!-- Student specific fields -->
                 <div id="student-fields">
                     <div class="mb-3">
-                        <label for="classroom" class="form-label">Classroom</label>
-                        <input type="text" class="form-control" id="classroom" name="classroom">
+                        <label for="classroom_id" class="form-label">Classroom</label>
+                        <select class="form-select" id="classroom_id" name="classroom_id">
+                            <option value="">Select Classroom</option>
+                            @foreach(\App\Models\Classroom::all() as $classroom)
+                                <option value="{{ $classroom->id }}">{{ $classroom->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject_ids" class="form-label">Choose Subjects (optional)</label>
+                        <select class="form-select" id="subject_ids" name="subject_ids[]" multiple>
+                            @foreach(\App\Models\Subject::with('teacher','classroom')->get() as $subject)
+                                <option value="{{ $subject->id }}">{{ $subject->name }} ({{ optional($subject->classroom)->name }}, {{ optional($subject->teacher)->name }})</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">You can pick subjects and teachers now or later.</div>
                     </div>
                 </div>
                 <!-- Teacher specific fields -->
-                <div id="teacher-fields" style="display:none;">
-                    <div class="mb-3">
-                        <label for="subject" class="form-label">Subject</label>
-                        <input type="text" class="form-control" id="subject" name="subject">
-                    </div>
-                </div>
+                <div id="teacher-fields" style="display:none;"></div>
                 <button type="submit" class="btn btn-primary w-100">Register</button>
             </form>
         </div>

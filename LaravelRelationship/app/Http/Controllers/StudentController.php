@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -9,8 +10,15 @@ class StudentController extends Controller
 {
     public function index()
     {
-        // Show only the logged-in student's details
-        $student = Auth::user();
-        return view('index', ['students' => [$student]]);
+        $user = Auth::user();
+        $student = Student::with(['classroom', 'subjects.teacher'])
+            ->where('email', $user->email)
+            ->first();
+
+        if (!$student) {
+            return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
+        }
+        
+        return view('student', compact('student'));
     }
 }
