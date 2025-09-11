@@ -30,7 +30,11 @@ class TeacherController extends Controller
         
         $allClassrooms = Classroom::all();
         
-        return view('teacher', compact('classrooms', 'subjects', 'allClassrooms'));
+        $students = Student::with('classroom')
+            ->whereIn('classroom_id', $classrooms->pluck('id'))
+            ->get();
+        
+        return view('teacher', compact('classrooms', 'subjects', 'allClassrooms', 'students'));
     }
     
     public function createClassroom(Request $request)
@@ -60,5 +64,23 @@ class TeacherController extends Controller
         ]);
         
         return redirect()->route('teacher.index');
+    }
+
+    public function deleteClassroom(Classroom $classroom)
+    {
+        $teacher = Teacher::where('email', Auth::user()->email)->first();
+        if (!$teacher) {
+            return redirect()->route('teacher.index')->withErrors(['teacher' => 'Teacher profile not found.']);
+        }
+        
+ 
+        $isOwnedByTeacher = $classroom->subjects()->where('teacher_id', $teacher->id)->exists();
+        if (!$isOwnedByTeacher) {
+            abort(403, 'You are not authorized to delete this classroom.');
+        }
+        
+        $classroom->delete();
+        
+        return redirect()->route('teacher.index')->with('status', 'Classroom deleted successfully.');
     }
 }

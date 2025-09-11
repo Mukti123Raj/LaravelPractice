@@ -30,6 +30,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/teacher', [TeacherController::class, 'index'])->name('teacher.index');
     Route::post('/teacher/classroom/create', [TeacherController::class, 'createClassroom'])->name('teacher.classroom.create');
     Route::post('/teacher/subject/create', [TeacherController::class, 'createSubject'])->name('teacher.subject.create');
+    Route::delete('/teacher/classroom/{classroom}', [TeacherController::class, 'deleteClassroom'])->name('teacher.classroom.delete');
 });
 
 Route::middleware(['auth', 'role:student'])->group(function () {

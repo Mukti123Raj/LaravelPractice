@@ -20,7 +20,14 @@
                     @forelse($classrooms as $classroom)
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>{{ $classroom->name }}</span>
-                            <span class="badge bg-secondary">Students: {{ $classroom->students_count }}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary">Students: {{ $classroom->students_count }}</span>
+                                <form method="POST" action="{{ route('teacher.classroom.delete', $classroom->id) }}" onsubmit="return confirm('Delete classroom {{ $classroom->name }}? This will remove its students due to cascade.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
                         </li>
                     @empty
                         <li class="list-group-item text-muted">No classrooms yet.</li>
@@ -42,6 +49,38 @@
                     @endforelse
                 </ul>
             </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Students In Your Classes</div>
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Classroom</th>
+                        <th>Classroom ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($students as $student)
+                        <tr>
+                            <td>{{ $student->id }}</td>
+                            <td>{{ $student->name }}</td>
+                            <td>{{ $student->email }}</td>
+                            <td>{{ optional($student->classroom)->name ?? '—' }}</td>
+                            <td>{{ $student->classroom_id }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-muted">No students found for your classrooms.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 
