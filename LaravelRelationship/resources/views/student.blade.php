@@ -1,11 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<x-student-navbar />
+
 <div class="container">
-    <form method="POST" action="/logout" class="mb-3">
-        @csrf
-        <button type="submit" class="btn btn-danger float-end">Logout</button>
-    </form>
     <h2 class="mb-4">Student Dashboard</h2>
     <ul class="list-group mb-3">
         <li class="list-group-item"><strong>Name:</strong> {{ Auth::user()->name }}</li>

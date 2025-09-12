@@ -11,7 +11,7 @@ use App\Models\Student;
 
 class TeacherController extends Controller
 {
-    public function index()
+    public function dashboard()
     {
         $teacherUser = Auth::user();
         $teacher = Teacher::where('email', $teacherUser->email)->first();
@@ -34,7 +34,12 @@ class TeacherController extends Controller
             ->whereIn('classroom_id', $classrooms->pluck('id'))
             ->get();
         
-        return view('teacher', compact('classrooms', 'subjects', 'allClassrooms', 'students'));
+        return view('teacher.dashboard', compact('classrooms', 'subjects', 'allClassrooms', 'students', 'teacher'));
+    }
+
+    public function index()
+    {
+        return $this->dashboard();
     }
     
     public function createClassroom(Request $request)

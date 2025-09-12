@@ -1,11 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<x-teacher-navbar />
+
 <div class="container">
-    <form method="POST" action="/logout" class="mb-3">
-        @csrf
-        <button type="submit" class="btn btn-danger float-end">Logout</button>
-    </form>
     <h2 class="mb-4">Teacher Dashboard</h2>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Your Details</h4>
