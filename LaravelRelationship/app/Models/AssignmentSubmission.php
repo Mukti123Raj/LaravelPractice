@@ -11,6 +11,7 @@ class AssignmentSubmission extends Model
 
     protected $fillable = [
         'submission_content',
+        'file_path',
         'marks_obtained',
         'teacher_feedback',
         'submitted_at',
@@ -36,10 +37,15 @@ class AssignmentSubmission extends Model
 
     public function getStatusAttribute()
     {
-        if ($this->graded_at) {
-            return 'graded';
+        if ($this->graded_at && $this->marks_obtained !== null) {
+            return 'done_with_marks';
         } elseif ($this->submitted_at) {
-            return 'submitted';
+            // Check if submitted late
+            if ($this->submitted_at->gt($this->assignment->due_date)) {
+                return 'late_submit';
+            } else {
+                return 'submitted';
+            }
         }
         return 'pending';
     }

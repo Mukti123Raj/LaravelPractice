@@ -102,8 +102,8 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Pending Assignments</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                        Total Assignments</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $assignmentStats['total'] ?? 0 }}</div>
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-tasks fa-2x text-gray-300"></i>
@@ -147,6 +147,62 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Assignment Statistics Card -->
+            @if(isset($assignmentStats) && $assignmentStats['total'] > 0)
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Assignment Statistics
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-success p-3">
+                                        <div class="h4 text-success">{{ $assignmentStats['done_with_marks'] }}</div>
+                                        <div class="text-muted">Done with Marks</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-primary p-3">
+                                        <div class="h4 text-primary">{{ $assignmentStats['submitted'] }}</div>
+                                        <div class="text-muted">Submitted</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-warning p-3">
+                                        <div class="h4 text-warning">{{ $assignmentStats['late_submit'] }}</div>
+                                        <div class="text-muted">Late Submit</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-warning p-3">
+                                        <div class="h4 text-warning">{{ $assignmentStats['due_soon'] }}</div>
+                                        <div class="text-muted">Due Soon</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-danger p-3">
+                                        <div class="h4 text-danger">{{ $assignmentStats['overdue'] }}</div>
+                                        <div class="text-muted">Overdue</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-info p-3">
+                                        <div class="h4 text-info">{{ $assignmentStats['total'] }}</div>
+                                        <div class="text-muted">Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
 
             <!-- Student Information -->
             <div class="row mb-4">
@@ -302,6 +358,10 @@
 
 .border-left-warning {
     border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
 }
 
 .text-xs {

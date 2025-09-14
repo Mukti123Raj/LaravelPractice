@@ -12,15 +12,42 @@ class StudentController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $student = Student::with(['classroom', 'subjects.teacher'])
+        $student = Student::with(['classroom', 'subjects.teacher', 'subjects.assignments.submissions' => function ($query) use ($user) {
+            $query->where('student_id', $user->id);
+        }])
             ->where('email', $user->email)
             ->first();
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
+
+        // Get assignment statistics
+        $assignments = collect();
+        foreach ($student->subjects as $subject) {
+            foreach ($subject->assignments as $assignment) {
+                $submission = $assignment->submissions->first();
+                $status = $assignment->getStatusForStudent($student->id);
+                $assignments->push([
+                    'assignment' => $assignment,
+                    'submission' => $submission,
+                    'status' => $status,
+                    'subject' => $subject
+                ]);
+            }
+        }
+
+        $assignmentStats = [
+            'total' => $assignments->count(),
+            'done_with_marks' => $assignments->where('status', 'done_with_marks')->count(),
+            'submitted' => $assignments->where('status', 'submitted')->count(),
+            'late_submit' => $assignments->where('status', 'late_submit')->count(),
+            'due_soon' => $assignments->where('status', 'due_soon')->count(),
+            'overdue' => $assignments->where('status', 'overdue')->count(),
+            'not_submitted' => $assignments->where('status', 'not_submitted')->count()
+        ];
         
-        return view('student.dashboard', compact('student'));
+        return view('student.dashboard', compact('student', 'assignmentStats'));
     }
 
     public function index()

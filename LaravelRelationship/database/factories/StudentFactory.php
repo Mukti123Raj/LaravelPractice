@@ -21,7 +21,6 @@ class StudentFactory extends Factory
         return [
              'name'        => $this->faker->name(),       // ✅ student name
             'email'       => $this->faker->unique()->safeEmail(), // optional
-            'teacher_id'  => Teacher::factory(),         // ✅ assign teacher
             'classroom_id'=> Classroom::factory(),
         ];
     }

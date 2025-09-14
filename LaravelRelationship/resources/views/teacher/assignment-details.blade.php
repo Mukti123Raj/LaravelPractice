@@ -219,9 +219,24 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <h6>Student Submission:</h6>
-                                <div class="border p-3 bg-light">
-                                    {{ $item['submission']->submission_content }}
-                                </div>
+                                @if($item['submission']->submission_content)
+                                    <div class="border p-3 bg-light mb-3">
+                                        {{ $item['submission']->submission_content }}
+                                    </div>
+                                @endif
+                                @if($item['submission']->file_path)
+                                    <div class="border p-3 bg-light">
+                                        <h6><i class="fas fa-file me-2"></i>Uploaded File:</h6>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                                            <span class="me-3">{{ basename($item['submission']->file_path) }}</span>
+                                            <a href="{{ route('teacher.submissions.download', $item['submission']->id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-download me-1"></i>
+                                                Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             
                             <div class="row">

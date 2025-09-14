@@ -22,7 +22,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ route('teacher.subjects.index') }}">
                             <i class="fas fa-book me-2"></i>
                             Subjects
                         </a>
@@ -158,8 +158,12 @@
 
                 <div class="col-lg-6 mb-4">
                     <div class="card shadow">
-                        <div class="card-header py-3">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
                             <h6 class="m-0 font-weight-bold text-success">Your Subjects</h6>
+                            <a href="{{ route('teacher.subjects.index') }}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-list me-1"></i>
+                                View All
+                            </a>
                         </div>
                         <div class="card-body">
                             @forelse($subjects as $subject)
@@ -169,7 +173,7 @@
                                         <br>
                                         <small class="text-muted">Classroom: {{ optional($subject->classroom)->name ?? '—' }}</small>
                                     </div>
-                                    <a href="{{ route('teacher.subjects', $subject->id) }}" class="btn btn-outline-primary btn-sm">
+                                    <a href="{{ route('teacher.subjects.show', $subject->id) }}" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-eye me-1"></i>
                                         View
                                     </a>

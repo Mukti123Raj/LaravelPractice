@@ -9,6 +9,10 @@ use App\Models\AssignmentSubmission;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\User;
+use App\Notifications\AssignmentCreatedNotification;
+use App\Notifications\AssignmentSubmittedNotification;
+use App\Notifications\AssignmentGradedNotification;
 
 class AssignmentController extends Controller
 {
@@ -60,7 +64,16 @@ class AssignmentController extends Controller
             'teacher_id' => $teacher->id
         ]);
 
-        return redirect()->route('teacher.subjects', $subject->id)
+        // Send notification to all students enrolled in this subject
+        $students = $subject->students;
+        foreach ($students as $student) {
+            $user = User::where('email', $student->email)->first();
+            if ($user) {
+                $user->notify(new AssignmentCreatedNotification($assignment));
+            }
+        }
+
+        return redirect()->route('teacher.subjects.show', $subject->id)
             ->with('success', 'Assignment created successfully!');
     }
 
@@ -125,6 +138,13 @@ class AssignmentController extends Controller
             'graded_at' => now()
         ]);
 
+        // Send notification to the student
+        $student = $submission->student;
+        $user = User::where('email', $student->email)->first();
+        if ($user) {
+            $user->notify(new AssignmentGradedNotification($submission));
+        }
+
         return back()->with('success', 'Assignment graded successfully!');
     }
 
@@ -143,7 +163,7 @@ class AssignmentController extends Controller
         $subjectId = $assignment->subject_id;
         $assignment->delete();
 
-        return redirect()->route('teacher.subjects', $subjectId)
+        return redirect()->route('teacher.subjects.show', $subjectId)
             ->with('success', 'Assignment deleted successfully!');
     }
 }

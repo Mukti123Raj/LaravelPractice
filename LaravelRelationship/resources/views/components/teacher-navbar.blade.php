@@ -24,7 +24,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('teacher.subjects*') ? 'active' : '' }}" href="{{ route('teacher.dashboard') }}">
+                    <a class="nav-link {{ request()->routeIs('teacher.subjects*') ? 'active' : '' }}" href="{{ route('teacher.subjects.index') }}">
                         <i class="fas fa-book me-1"></i>
                         Subjects
                     </a>
@@ -44,6 +44,9 @@
             </ul>
             
             <ul class="navbar-nav">
+                <li class="nav-item">
+                    <x-notification-bell user-role="teacher" />
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="teacherDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-user-circle me-1"></i>

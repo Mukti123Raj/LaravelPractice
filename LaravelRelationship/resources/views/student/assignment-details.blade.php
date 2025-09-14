@@ -46,7 +46,24 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">{{ $assignment->title }}</h1>
+                <div>
+                    <h1 class="h2">{{ $assignment->title }}</h1>
+                    <div class="mt-2">
+                        @if($status === 'done_with_marks')
+                            <span class="badge bg-success">Done with Marks</span>
+                        @elseif($status === 'submitted')
+                            <span class="badge bg-primary">Submitted</span>
+                        @elseif($status === 'late_submit')
+                            <span class="badge bg-warning">Late Submit</span>
+                        @elseif($status === 'due_soon')
+                            <span class="badge bg-warning">Due Soon</span>
+                        @elseif($status === 'overdue')
+                            <span class="badge bg-danger">Overdue</span>
+                        @else
+                            <span class="badge bg-info">Not Submitted</span>
+                        @endif
+                    </div>
+                </div>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <a href="{{ route('student.assignments') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
@@ -142,8 +159,12 @@
                                 <!-- Existing Submission -->
                                 <div class="mb-3">
                                     <h6>Submission Status:</h6>
-                                    @if($submission->status === 'graded')
-                                        <span class="badge bg-success">Graded</span>
+                                    @if($submission->status === 'done_with_marks')
+                                        <span class="badge bg-success">Done with Marks</span>
+                                    @elseif($submission->status === 'submitted')
+                                        <span class="badge bg-primary">Submitted</span>
+                                    @elseif($submission->status === 'late_submit')
+                                        <span class="badge bg-warning">Late Submit</span>
                                     @else
                                         <span class="badge bg-warning">Submitted</span>
                                     @endif
@@ -154,9 +175,24 @@
 
                                 <div class="mb-3">
                                     <h6>Your Submission:</h6>
-                                    <div class="border p-3 bg-light">
-                                        {{ $submission->submission_content }}
-                                    </div>
+                                    @if($submission->submission_content)
+                                        <div class="border p-3 bg-light mb-3">
+                                            {{ $submission->submission_content }}
+                                        </div>
+                                    @endif
+                                    @if($submission->file_path)
+                                        <div class="border p-3 bg-light">
+                                            <h6><i class="fas fa-file me-2"></i>Uploaded File:</h6>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                <span class="me-3">{{ basename($submission->file_path) }}</span>
+                                                <a href="{{ route('student.assignments.download', $submission->id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-download me-1"></i>
+                                                    Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 @if($submission->marks_obtained !== null)
@@ -174,7 +210,7 @@
                                     </div>
                                 @endif
 
-                                @if($submission->status !== 'graded' && !$assignment->due_date->isPast())
+                                @if($submission->status !== 'done_with_marks' && !$assignment->due_date->isPast())
                                     <div class="mt-3">
                                         <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateSubmissionModal">
                                             <i class="fas fa-edit me-1"></i>
@@ -220,16 +256,24 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('student.assignments.submit', $assignment->id) }}">
+            <form method="POST" action="{{ route('student.assignments.submit', $assignment->id) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="submission_content" class="form-label">Your Submission</label>
-                        <textarea class="form-control" id="submission_content" name="submission_content" rows="8" required placeholder="Write your assignment submission here..."></textarea>
+                        <label for="submission_content" class="form-label">Your Submission (Text)</label>
+                        <textarea class="form-control" id="submission_content" name="submission_content" rows="6" placeholder="Write your assignment submission here..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="submission_file" class="form-label">Upload File (Optional)</label>
+                        <input type="file" class="form-control" id="submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Supported formats: PDF, DOC, DOCX. Maximum size: 1MB
+                        </div>
                     </div>
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        Make sure to review your submission before submitting. You can update it later if the deadline hasn't passed.
+                        You can submit text, a file, or both. Make sure to review your submission before submitting. You can update it later if the deadline hasn't passed.
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -245,7 +289,7 @@
 </div>
 
 <!-- Update Submission Modal -->
-@if($submission && $submission->status !== 'graded' && !$assignment->due_date->isPast())
+@if($submission && $submission->status !== 'done_with_marks' && !$assignment->due_date->isPast())
 <div class="modal fade" id="updateSubmissionModal" tabindex="-1" aria-labelledby="updateSubmissionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -256,16 +300,32 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('student.assignments.update', $assignment->id) }}">
+            <form method="POST" action="{{ route('student.assignments.update', $assignment->id) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="update_submission_content" class="form-label">Your Submission</label>
-                        <textarea class="form-control" id="update_submission_content" name="submission_content" rows="8" required>{{ $submission->submission_content }}</textarea>
+                        <label for="update_submission_content" class="form-label">Your Submission (Text)</label>
+                        <textarea class="form-control" id="update_submission_content" name="submission_content" rows="6">{{ $submission->submission_content }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="update_submission_file" class="form-label">Upload New File (Optional)</label>
+                        <input type="file" class="form-control" id="update_submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Supported formats: PDF, DOC, DOCX. Maximum size: 1MB
+                        </div>
+                        @if($submission->file_path)
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-file me-1"></i>
+                                    Current file: {{ basename($submission->file_path) }}
+                                </small>
+                            </div>
+                        @endif
                     </div>
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Updating your submission will replace the previous version.
+                        Updating your submission will replace the previous version. If you upload a new file, it will replace the existing one.
                     </div>
                 </div>
                 <div class="modal-footer">

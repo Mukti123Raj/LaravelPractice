@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Classroom;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\AssignmentSubmission;
 
 class TeacherController extends Controller
 {
@@ -40,6 +42,23 @@ class TeacherController extends Controller
     public function index()
     {
         return $this->dashboard();
+    }
+    
+    public function subjects()
+    {
+        $teacherUser = Auth::user();
+        $teacher = Teacher::where('email', $teacherUser->email)->first();
+        
+        if (!$teacher) {
+            return redirect()->route('login')->withErrors(['email' => 'Teacher profile not found.']);
+        }
+        
+        $subjects = Subject::with(['classroom', 'assignments', 'students'])
+            ->where('teacher_id', $teacher->id)
+            ->orderBy('name')
+            ->get();
+        
+        return view('teacher.subjects.index', compact('subjects', 'teacher'));
     }
     
     public function createClassroom(Request $request)
@@ -87,5 +106,33 @@ class TeacherController extends Controller
         $classroom->delete();
         
         return redirect()->route('teacher.index')->with('status', 'Classroom deleted successfully.');
+    }
+
+    public function downloadSubmission($submissionId)
+    {
+        $teacherUser = Auth::user();
+        $teacher = Teacher::where('email', $teacherUser->email)->first();
+
+        if (!$teacher) {
+            return redirect()->route('login')->withErrors(['error' => 'Teacher record not found.']);
+        }
+
+        $submission = AssignmentSubmission::with(['assignment.subject'])
+            ->where('id', $submissionId)
+            ->firstOrFail();
+
+        // Check if the teacher is authorized to access this submission
+        if ($submission->assignment->subject->teacher_id !== $teacher->id) {
+            abort(403, 'You are not authorized to download this submission.');
+        }
+
+        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+            return back()->withErrors(['error' => 'File not found.']);
+        }
+
+        $studentName = $submission->student->name ?? 'Unknown Student';
+        $fileName = $studentName . '_' . $submission->assignment->title . '_' . basename($submission->file_path);
+
+        return Storage::disk('public')->download($submission->file_path, $fileName);
     }
 }

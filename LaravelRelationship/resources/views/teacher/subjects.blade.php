@@ -22,7 +22,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">
+                        <a class="nav-link active" href="{{ route('teacher.subjects.index') }}">
                             <i class="fas fa-book me-2"></i>
                             Subjects
                         </a>
@@ -46,8 +46,21 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">{{ $subject->name }} - Subject Details</h1>
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{{ route('teacher.dashboard') }}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('teacher.subjects.index') }}">Subjects</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ $subject->name }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="h2">{{ $subject->name }} - Subject Details</h1>
+                </div>
                 <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="{{ route('teacher.subjects.index') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back to Subjects
+                    </a>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
                         <i class="fas fa-plus me-1"></i>
                         Create Assignment

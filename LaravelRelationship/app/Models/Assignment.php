@@ -42,4 +42,22 @@ class Assignment extends Model
     {
         return $this->hasManyThrough(Student::class, AssignmentSubmission::class, 'assignment_id', 'id', 'id', 'student_id');
     }
+
+    public function getStatusForStudent($studentId)
+    {
+        $submission = $this->submissions()->where('student_id', $studentId)->first();
+        
+        if ($submission) {
+            return $submission->status;
+        } else {
+            // No submission yet - check due date
+            if ($this->due_date->isPast()) {
+                return 'overdue';
+            } elseif ($this->due_date->diffInDays(now()) <= 1) {
+                return 'due_soon';
+            } else {
+                return 'not_submitted';
+            }
+        }
+    }
 }

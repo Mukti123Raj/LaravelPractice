@@ -90,16 +90,18 @@
                                     {{ $assignment->title }}
                                 </h6>
                                 <div>
-                                    @if($status === 'graded')
-                                        <span class="badge bg-success">Graded</span>
+                                    @if($status === 'done_with_marks')
+                                        <span class="badge bg-success">Done with Marks</span>
                                     @elseif($status === 'submitted')
-                                        <span class="badge bg-warning">Submitted</span>
-                                    @elseif($assignment->due_date->isPast())
-                                        <span class="badge bg-danger">Overdue</span>
-                                    @elseif($assignment->due_date->diffInDays(now()) <= 1)
+                                        <span class="badge bg-primary">Submitted</span>
+                                    @elseif($status === 'late_submit')
+                                        <span class="badge bg-warning">Late Submit</span>
+                                    @elseif($status === 'due_soon')
                                         <span class="badge bg-warning">Due Soon</span>
+                                    @elseif($status === 'overdue')
+                                        <span class="badge bg-danger">Overdue</span>
                                     @else
-                                        <span class="badge bg-info">Active</span>
+                                        <span class="badge bg-info">Not Submitted</span>
                                     @endif
                                 </div>
                             </div>
@@ -170,25 +172,37 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-3 text-center">
-                                    <div class="border-left-primary p-3">
-                                        <div class="h4 text-primary">{{ $assignments->where('status', 'graded')->count() }}</div>
-                                        <div class="text-muted">Graded</div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-success p-3">
+                                        <div class="h4 text-success">{{ $assignments->where('status', 'done_with_marks')->count() }}</div>
+                                        <div class="text-muted">Done with Marks</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 text-center">
-                                    <div class="border-left-warning p-3">
-                                        <div class="h4 text-warning">{{ $assignments->where('status', 'submitted')->count() }}</div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-primary p-3">
+                                        <div class="h4 text-primary">{{ $assignments->where('status', 'submitted')->count() }}</div>
                                         <div class="text-muted">Submitted</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 text-center">
-                                    <div class="border-left-danger p-3">
-                                        <div class="h4 text-danger">{{ $assignments->where('status', 'not_submitted')->count() }}</div>
-                                        <div class="text-muted">Pending</div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-warning p-3">
+                                        <div class="h4 text-warning">{{ $assignments->where('status', 'late_submit')->count() }}</div>
+                                        <div class="text-muted">Late Submit</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 text-center">
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-warning p-3">
+                                        <div class="h4 text-warning">{{ $assignments->where('status', 'due_soon')->count() }}</div>
+                                        <div class="text-muted">Due Soon</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="border-left-danger p-3">
+                                        <div class="h4 text-danger">{{ $assignments->where('status', 'overdue')->count() }}</div>
+                                        <div class="text-muted">Overdue</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 text-center">
                                     <div class="border-left-info p-3">
                                         <div class="h4 text-info">{{ $assignments->count() }}</div>
                                         <div class="text-muted">Total</div>
