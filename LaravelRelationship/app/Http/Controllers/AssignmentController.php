@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Models\Subject;
@@ -16,35 +17,37 @@ use App\Notifications\AssignmentGradedNotification;
 
 class AssignmentController extends Controller
 {
+    protected $teacher;
+
+    public function __construct()
+    {
+        $this->teacher = \App\Models\Teacher::where('email', Auth::user()->email ?? null)->first();
+    }
     public function index($subjectId)
     {
-        $teacher = Teacher::where('email', Auth::user()->email)->first();
-        
+        $teacher = $this->teacher;
+
         if (!$teacher) {
             return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
         }
 
-        $subject = Subject::with(['assignments.submissions.student', 'students'])
-            ->where('id', $subjectId)
-            ->where('teacher_id', $teacher->id)
-            ->firstOrFail();
+        $cacheKey = "teacher:{$teacher->id}:subject:{$subjectId}";
+        $subject = Cache::remember($cacheKey, 30, function () use ($subjectId, $teacher) {
+            return Subject::with(['assignments.submissions.student', 'students'])
+                ->where('id', $subjectId)
+                ->where('teacher_id', $teacher->id)
+                ->firstOrFail();
+        });
 
         return view('teacher.subjects', compact('subject', 'teacher'));
     }
 
-    public function create(Request $request)
+    public function create(\App\Http\Requests\StoreAssignmentRequest $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'instructions' => 'required|string',
-            'total_marks' => 'required|integer|min:1',
-            'due_date' => 'required|date|after:now',
-            'subject_id' => 'required|exists:subjects,id'
-        ]);
+        // Validation handled by StoreAssignmentRequest
 
-        $teacher = Teacher::where('email', Auth::user()->email)->first();
-        
+        $teacher = $this->teacher;
+
         if (!$teacher) {
             return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
         }
@@ -79,16 +82,18 @@ class AssignmentController extends Controller
 
     public function show($assignmentId)
     {
-        $teacher = Teacher::where('email', Auth::user()->email)->first();
-        
+        $teacher = $this->teacher;
+
         if (!$teacher) {
             return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
         }
 
-        $assignment = Assignment::with(['subject', 'submissions.student'])
-            ->where('id', $assignmentId)
-            ->where('teacher_id', $teacher->id)
-            ->firstOrFail();
+        $assignment = Cache::remember("teacher:{$teacher->id}:assignment:{$assignmentId}", 30, function () use ($assignmentId, $teacher) {
+            return Assignment::with(['subject', 'submissions.student'])
+                ->where('id', $assignmentId)
+                ->where('teacher_id', $teacher->id)
+                ->firstOrFail();
+        });
 
         // Get all students enrolled in this subject
         $enrolledStudents = $assignment->subject->students;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Classroom;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -22,19 +23,27 @@ class TeacherController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Teacher profile not found.']);
         }
         
-        $classrooms = Classroom::withCount('students')
-            ->whereHas('subjects', function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
-            })
-            ->get();
+        $classrooms = Cache::remember("teacher:{$teacher->id}:dashboard:classrooms", 30, function () use ($teacher) {
+            return Classroom::withCount('students')
+                ->whereHas('subjects', function ($q) use ($teacher) {
+                    $q->where('teacher_id', $teacher->id);
+                })
+                ->get();
+        });
             
-        $subjects = Subject::with('classroom')->where('teacher_id', $teacher->id)->get();
+        $subjects = Cache::remember("teacher:{$teacher->id}:dashboard:subjects", 30, function () use ($teacher) {
+            return Subject::with('classroom')->where('teacher_id', $teacher->id)->get();
+        });
         
-        $allClassrooms = Classroom::all();
+        $allClassrooms = Cache::remember('classrooms:all', 30, function () {
+            return Classroom::all();
+        });
         
-        $students = Student::with('classroom')
-            ->whereIn('classroom_id', $classrooms->pluck('id'))
-            ->get();
+        $students = Cache::remember("teacher:{$teacher->id}:dashboard:students", 30, function () use ($classrooms) {
+            return Student::with('classroom')
+                ->whereIn('classroom_id', $classrooms->pluck('id'))
+                ->get();
+        });
         
         return view('teacher.dashboard', compact('classrooms', 'subjects', 'allClassrooms', 'students', 'teacher'));
     }
@@ -53,10 +62,12 @@ class TeacherController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Teacher profile not found.']);
         }
         
-        $subjects = Subject::with(['classroom', 'assignments', 'students'])
-            ->where('teacher_id', $teacher->id)
-            ->orderBy('name')
-            ->get();
+        $subjects = Cache::remember("teacher:{$teacher->id}:subjects:index", 30, function () use ($teacher) {
+            return Subject::with(['classroom', 'assignments', 'students'])
+                ->where('teacher_id', $teacher->id)
+                ->orderBy('name')
+                ->get();
+        });
         
         return view('teacher.subjects.index', compact('subjects', 'teacher'));
     }

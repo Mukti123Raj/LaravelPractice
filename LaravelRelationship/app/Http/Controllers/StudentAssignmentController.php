@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Models\Student;
@@ -13,18 +14,30 @@ use App\Notifications\AssignmentSubmittedNotification;
 
 class StudentAssignmentController extends Controller
 {
-    public function index()
+    protected $student;
+
+    public function __construct()
     {
         $user = Auth::user();
-        $student = Student::with(['subjects.assignments.submissions' => function ($query) use ($user) {
-            $query->where('student_id', $user->id);
-        }])
-            ->where('email', $user->email)
-            ->first();
+        $this->student = $user
+            ? Student::where('email', $user->email)->first()
+            : null;
+    }
 
-        if (!$student) {
+    public function index()
+    {
+        if (!$this->student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
+
+        $student = $this->student;
+        $student = Cache::remember("student:{$student->id}:assignments:index", 30, function () use ($student) {
+            return Student::with(['subjects.assignments.submissions' => function ($query) use ($student) {
+                $query->where('student_id', $student->id);
+            }])
+                ->where('id', $student->id)
+                ->first();
+        });
 
         // Get all assignments from enrolled subjects
         $assignments = collect();
@@ -49,21 +62,21 @@ class StudentAssignmentController extends Controller
 
     public function show($assignmentId)
     {
-        $user = Auth::user();
-        $student = Student::where('email', $user->email)->first();
-
-        if (!$student) {
+        if (!$this->student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
 
-        $assignment = Assignment::with(['subject', 'submissions' => function ($query) use ($student) {
-            $query->where('student_id', $student->id);
-        }])
-            ->where('id', $assignmentId)
-            ->whereHas('subject.students', function ($query) use ($student) {
+        $student = $this->student;
+        $assignment = Cache::remember("student:{$student->id}:assignment:{$assignmentId}", 30, function () use ($assignmentId, $student) {
+            return Assignment::with(['subject', 'submissions' => function ($query) use ($student) {
                 $query->where('student_id', $student->id);
-            })
-            ->firstOrFail();
+            }])
+                ->where('id', $assignmentId)
+                ->whereHas('subject.students', function ($query) use ($student) {
+                    $query->where('student_id', $student->id);
+                })
+                ->firstOrFail();
+        });
 
         $submission = $assignment->submissions->first();
         $status = $assignment->getStatusForStudent($student->id);
@@ -71,25 +84,15 @@ class StudentAssignmentController extends Controller
         return view('student.assignment-details', compact('assignment', 'submission', 'student', 'status'));
     }
 
-    public function submit(Request $request, $assignmentId)
+    public function submit(\App\Http\Requests\Student\StudentSubmitAssignmentRequest $request, $assignmentId)
     {
-        $request->validate([
-            'submission_content' => 'nullable|string',
-            'submission_file' => 'nullable|file|mimes:pdf,doc,docx|max:1024'
-        ]);
+        // Validation handled by StudentSubmitAssignmentRequest
 
-        // Check if at least one submission method is provided
-        if (empty($request->submission_content) && !$request->hasFile('submission_file')) {
-            return back()->withErrors(['submission' => 'Please provide either text content or upload a file.']);
-        }
-
-        $user = Auth::user();
-        $student = Student::where('email', $user->email)->first();
-
-        if (!$student) {
+        if (!$this->student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
 
+        $student = $this->student;
         $assignment = Assignment::where('id', $assignmentId)
             ->whereHas('subject.students', function ($query) use ($student) {
                 $query->where('student_id', $student->id);
@@ -136,25 +139,15 @@ class StudentAssignmentController extends Controller
             ->with('success', 'Assignment submitted successfully!');
     }
 
-    public function updateSubmission(Request $request, $assignmentId)
+    public function updateSubmission(\App\Http\Requests\Student\StudentUpdateAssignmentRequest $request, $assignmentId)
     {
-        $request->validate([
-            'submission_content' => 'nullable|string',
-            'submission_file' => 'nullable|file|mimes:pdf,doc,docx|max:1024'
-        ]);
+        // Validation handled by StudentUpdateAssignmentRequest
 
-        // Check if at least one submission method is provided
-        if (empty($request->submission_content) && !$request->hasFile('submission_file')) {
-            return back()->withErrors(['submission' => 'Please provide either text content or upload a file.']);
-        }
-
-        $user = Auth::user();
-        $student = Student::where('email', $user->email)->first();
-
-        if (!$student) {
+        if (!$this->student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
 
+        $student = $this->student;
         $assignment = Assignment::where('id', $assignmentId)
             ->whereHas('subject.students', function ($query) use ($student) {
                 $query->where('student_id', $student->id);

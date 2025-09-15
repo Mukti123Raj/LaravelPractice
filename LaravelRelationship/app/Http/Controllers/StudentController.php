@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Student;
 use App\Models\Subject;
 
@@ -12,11 +13,13 @@ class StudentController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $student = Student::with(['classroom', 'subjects.teacher', 'subjects.assignments.submissions' => function ($query) use ($user) {
-            $query->where('student_id', $user->id);
-        }])
-            ->where('email', $user->email)
-            ->first();
+        $student = Cache::remember("student:{$user->id}:dashboard", 30, function () use ($user) {
+            return Student::with(['classroom', 'subjects.teacher', 'subjects.assignments.submissions' => function ($query) use ($user) {
+                $query->where('student_id', $user->id);
+            }])
+                ->where('email', $user->email)
+                ->first();
+        });
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
@@ -58,20 +61,24 @@ class StudentController extends Controller
     public function subjects()
     {
         $user = Auth::user();
-        $student = Student::with(['classroom', 'subjects.teacher'])
-            ->where('email', $user->email)
-            ->first();
+        $student = Cache::remember("student:{$user->id}:subjects", 30, function () use ($user) {
+            return Student::with(['classroom', 'subjects.teacher'])
+                ->where('email', $user->email)
+                ->first();
+        });
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
 
-        $availableSubjects = Subject::with('teacher')
-            ->where('classroom_id', $student->classroom_id)
-            ->whereDoesntHave('students', function ($query) use ($student) {
-                $query->where('student_id', $student->id);
-            })
-            ->get();
+        $availableSubjects = Cache::remember("student:{$student->id}:available-subjects", 30, function () use ($student) {
+            return Subject::with('teacher')
+                ->where('classroom_id', $student->classroom_id)
+                ->whereDoesntHave('students', function ($query) use ($student) {
+                    $query->where('student_id', $student->id);
+                })
+                ->get();
+        });
 
         return view('student.subjects', compact('student', 'availableSubjects'));
     }
