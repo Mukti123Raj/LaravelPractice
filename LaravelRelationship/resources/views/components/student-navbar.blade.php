@@ -41,6 +41,7 @@
                         Schedule
                     </a>
                 </li>
+                <li><a href="{{ route('student.attendance.summary') }}">My Attendance</a></li>
             </ul>
             
             <ul class="navbar-nav">

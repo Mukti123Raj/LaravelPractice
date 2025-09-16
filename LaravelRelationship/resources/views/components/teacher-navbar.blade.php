@@ -41,6 +41,7 @@
                         Reports
                     </a>
                 </li>
+                <li><a href="{{ route('teacher.attendance.index') }}">Attendance</a></li>
             </ul>
             
             <ul class="navbar-nav">

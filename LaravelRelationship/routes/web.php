@@ -8,6 +8,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\StudentAssignmentController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AttendanceController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -52,6 +53,11 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::post('/teacher/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('teacher.notifications.mark-all-read');
     Route::delete('/teacher/notifications/{notification}', [NotificationController::class, 'delete'])->name('teacher.notifications.delete');
     Route::delete('/teacher/notifications', [NotificationController::class, 'deleteAll'])->name('teacher.notifications.delete-all');
+
+    // Attendance routes (teacher)
+    Route::get('/teacher/attendance', [AttendanceController::class, 'index'])->name('teacher.attendance.index');
+    Route::get('/teacher/attendance/{subject}', [AttendanceController::class, 'show'])->name('teacher.attendance.show');
+    Route::post('/teacher/attendance/{subject}', [AttendanceController::class, 'store'])->name('teacher.attendance.store');
 });
 
 Route::middleware(['auth', 'role:student'])->group(function () {
@@ -75,4 +81,7 @@ Route::middleware(['auth', 'role:student'])->group(function () {
     Route::post('/student/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('student.notifications.mark-all-read');
     Route::delete('/student/notifications/{notification}', [NotificationController::class, 'delete'])->name('student.notifications.delete');
     Route::delete('/student/notifications', [NotificationController::class, 'deleteAll'])->name('student.notifications.delete-all');
+
+    // Attendance routes (student)
+    Route::get('/student/attendance', [AttendanceController::class, 'summary'])->name('student.attendance.summary');
 });
