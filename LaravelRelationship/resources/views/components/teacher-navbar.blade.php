@@ -30,7 +30,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('teacher.students*') ? 'active' : '' }}" href="#">
+                    <a class="nav-link {{ request()->routeIs('teacher.students*') ? 'active' : '' }}" href="{{ route('teacher.students.index') }}">
                         <i class="fas fa-user-graduate me-1"></i>
                         Students
                     </a>
@@ -41,7 +41,12 @@
                         Reports
                     </a>
                 </li>
-                <li><a href="{{ route('teacher.attendance.index') }}">Attendance</a></li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('teacher.attendance.*') ? 'active' : '' }}" href="{{ route('teacher.attendance.index') }}">
+                        <i class="fas fa-user-check me-1"></i>
+                        Attendance
+                    </a>
+                </li>
             </ul>
             
             <ul class="navbar-nav">

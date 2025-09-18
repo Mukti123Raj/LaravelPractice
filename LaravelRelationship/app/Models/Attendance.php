@@ -17,6 +17,11 @@ class Attendance extends Model
         'is_present',
     ];
 
+    protected $casts = [
+        'attendance_date' => 'date',
+        'is_present' => 'boolean',
+    ];
+
     public function student()
     {
         return $this->belongsTo(Student::class);

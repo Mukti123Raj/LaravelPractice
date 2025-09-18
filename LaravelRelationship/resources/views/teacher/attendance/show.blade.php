@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-teacher-navbar />
 <div class="container">
     <h1 class="mb-4">Mark Attendance - {{ $subject->name }}</h1>
 
@@ -13,7 +14,7 @@
 
         <div class="mb-3">
             <label for="attendance_date" class="form-label">Date</label>
-            <input type="date" id="attendance_date" name="attendance_date" class="form-control" value="{{ old('attendance_date', $today) }}" required>
+            <input type="date" id="attendance_date" name="attendance_date" class="form-control" value="{{ old('attendance_date', $date) }}" required>
             @error('attendance_date')
                 <div class="text-danger small">{{ $message }}</div>
             @enderror
@@ -40,7 +41,7 @@
                             <tr>
                                 <td>{{ $student->name }}</td>
                                 <td class="text-center" style="width: 140px;">
-                                    <input type="checkbox" name="attendance[{{ $student->id }}]" value="1">
+                                    <input type="checkbox" name="attendance[{{ $student->id }}]" value="1" {{ optional($attendanceMap->get($student->id))->is_present ? 'checked' : '' }}>
                                 </td>
                             </tr>
                         @empty
@@ -64,6 +65,11 @@
 function toggleAll(val) {
     document.querySelectorAll('input[type="checkbox"][name^="attendance["]').forEach(cb => cb.checked = val);
 }
+document.getElementById('attendance_date').addEventListener('change', function() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('date', this.value);
+    window.location.href = url.toString();
+});
 </script>
 @endsection
 

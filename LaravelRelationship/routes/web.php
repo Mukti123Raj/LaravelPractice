@@ -34,6 +34,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/teacher', [TeacherController::class, 'index'])->name('teacher.index');
     Route::get('/teacher/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
     Route::get('/teacher/subjects', [TeacherController::class, 'subjects'])->name('teacher.subjects.index');
+    Route::get('/teacher/students', [TeacherController::class, 'students'])->name('teacher.students.index');
     Route::post('/teacher/classroom/create', [TeacherController::class, 'createClassroom'])->name('teacher.classroom.create');
     Route::post('/teacher/subject/create', [TeacherController::class, 'createSubject'])->name('teacher.subject.create');
     Route::delete('/teacher/classroom/{classroom}', [TeacherController::class, 'deleteClassroom'])->name('teacher.classroom.delete');

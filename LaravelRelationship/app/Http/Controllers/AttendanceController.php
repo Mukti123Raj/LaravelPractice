@@ -24,8 +24,12 @@ class AttendanceController extends Controller
 
     public function show(Subject $subject)
     {
-        // Ensure the teacher owns the subject
-        $this->authorize('view', $subject);
+        // Ensure the authenticated teacher owns the subject
+        $teacher = Auth::user();
+        abort_unless((int) $subject->teacher_id === (int) $teacher->id, 403);
+
+        // Determine date to display
+        $date = request('date', now()->toDateString());
 
         // Students enrolled in the subject (via pivot student_subject) using PowerJoins
         $students = \App\Models\Student::query()
@@ -35,16 +39,25 @@ class AttendanceController extends Controller
             ->orderBy('students.name')
             ->get();
 
+        // Existing attendance keyed by student id for the selected date
+        $attendanceMap = Attendance::query()
+            ->where('subject_id', $subject->id)
+            ->where('attendance_date', $date)
+            ->get()
+            ->keyBy('student_id');
+
         return view('teacher.attendance.show', [
             'subject' => $subject,
             'students' => $students,
-            'today' => now()->toDateString(),
+            'date' => $date,
+            'attendanceMap' => $attendanceMap,
         ]);
     }
 
     public function store(Request $request, Subject $subject)
     {
-        $this->authorize('update', $subject);
+        $teacher = Auth::user();
+        abort_unless((int) $subject->teacher_id === (int) $teacher->id, 403);
 
         $validated = $request->validate([
             'attendance_date' => ['required', 'date'],
@@ -73,13 +86,22 @@ class AttendanceController extends Controller
         }
 
         return redirect()
-            ->route('teacher.attendance.show', $subject)
+            ->route('teacher.attendance.show', [$subject, 'date' => $attendanceDate])
             ->with('status', 'Attendance saved.');
     }
 
     public function summary()
     {
-        $student = Auth::user();
+        $authUser = Auth::user();
+        $student = Student::query()
+            ->where('email', $authUser->email)
+            ->first();
+
+        if (!$student) {
+            return view('student.attendance.summary', [
+                'summary' => collect(),
+            ]);
+        }
 
         // Aggregate attendance per subject for this student using PowerJoins
         $summary = Attendance::query()

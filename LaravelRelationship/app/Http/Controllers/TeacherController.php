@@ -71,6 +71,39 @@ class TeacherController extends Controller
         
         return view('teacher.subjects.index', compact('subjects', 'teacher'));
     }
+
+    public function students()
+    {
+        $teacherUser = Auth::user();
+        $teacher = Teacher::where('email', $teacherUser->email)->first();
+
+        if (!$teacher) {
+            return redirect()->route('login')->withErrors(['email' => 'Teacher profile not found.']);
+        }
+
+        // Students who are in classrooms/subjects owned by this teacher
+        // Using PowerJoins to join relationships and aggregate attendance
+        $students = Student::query()
+            ->joinRelationship('classroom')
+            ->joinRelationship('subjects')
+            ->where('subjects.teacher_id', $teacher->id)
+            ->leftJoin('attendances', function ($join) {
+                $join->on('attendances.student_id', '=', 'students.id')
+                    ->on('attendances.subject_id', '=', 'subjects.id');
+            })
+            ->groupBy('students.id', 'students.name', 'students.email', 'students.classroom_id', 'classrooms.name')
+            ->select('students.*')
+            ->addSelect('classrooms.name as classroom_name')
+            ->selectRaw('COUNT(attendances.id) as total_lectures')
+            ->selectRaw('SUM(CASE WHEN attendances.is_present THEN 1 ELSE 0 END) as attended_lectures')
+            ->orderBy('students.name')
+            ->get();
+
+        return view('teacher.students.index', [
+            'students' => $students,
+            'teacher' => $teacher,
+        ]);
+    }
     
     public function createClassroom(Request $request)
     {
