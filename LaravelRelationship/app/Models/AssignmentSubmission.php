@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Events\AssignmentSubmitted;
+use App\Events\AssignmentGraded;
 
 class AssignmentSubmission extends Model
 {
@@ -24,6 +26,23 @@ class AssignmentSubmission extends Model
         'submitted_at' => 'datetime',
         'graded_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($submission) {
+            // Dispatch event when assignment is submitted
+            event(new AssignmentSubmitted($submission));
+        });
+
+        static::updated(function ($submission) {
+            // Check if marks were just added (graded)
+            if ($submission->wasChanged('marks_obtained') && $submission->marks_obtained !== null) {
+                event(new AssignmentGraded($submission));
+            }
+        });
+    }
 
     public function assignment()
     {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Events\AssignmentCreated;
 
 class Assignment extends Model
 {
@@ -22,6 +23,15 @@ class Assignment extends Model
     protected $casts = [
         'due_date' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($assignment) {
+            event(new AssignmentCreated($assignment));
+        });
+    }
 
     public function subject()
     {
