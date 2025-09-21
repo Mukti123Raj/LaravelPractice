@@ -81,8 +81,6 @@ class TeacherController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Teacher profile not found.']);
         }
 
-        // Students who are in classrooms/subjects owned by this teacher
-        // Using PowerJoins to join relationships and aggregate attendance
         $students = Student::query()
             ->joinRelationship('classroom')
             ->joinRelationship('subjects')
@@ -154,29 +152,50 @@ class TeacherController extends Controller
 
     public function downloadSubmission($submissionId)
     {
-        $teacherUser = Auth::user();
-        $teacher = Teacher::where('email', $teacherUser->email)->first();
+        try {
+            $teacherUser = Auth::user();
+            $teacher = Teacher::where('email', $teacherUser->email)->first();
 
-        if (!$teacher) {
-            return redirect()->route('login')->withErrors(['error' => 'Teacher record not found.']);
+            if (!$teacher) {
+                return redirect()->route('login')->withErrors(['error' => 'Teacher record not found.']);
+            }
+
+            $submission = AssignmentSubmission::with(['assignment.subject'])
+                ->where('id', $submissionId)
+                ->firstOrFail();
+
+            if ($submission->assignment->subject->teacher_id !== $teacher->id) {
+                abort(403, 'You are not authorized to download this submission.');
+            }
+
+            if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
+                return back()->withErrors(['error' => 'File not found.']);
+            }
+
+            $studentName = $submission->student->name ?? 'Unknown Student';
+            $fileName = $studentName . '_' . $submission->assignment->title . '_' . basename($submission->file_path);
+
+            return Storage::disk('public')->download($submission->file_path, $fileName);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'Submission not found or you do not have permission to download it.']);
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            // Re-throw authorization errors
+            throw $e;
+        } catch (\Illuminate\Http\Exceptions\FileNotFoundException $e) {
+            \Log::error('File not found for teacher download: ' . $e->getMessage(), [
+                'submission_id' => $submissionId,
+                'teacher_id' => $teacher->id ?? null,
+                'file_path' => $submission->file_path ?? null
+            ]);
+            return back()->withErrors(['error' => 'File not found on server.']);
+        } catch (\Exception $e) {
+            \Log::error('Error downloading submission file: ' . $e->getMessage(), [
+                'submission_id' => $submissionId,
+                'teacher_id' => $teacher->id ?? null,
+                'user_id' => Auth::id()
+            ]);
+            return back()->withErrors(['error' => 'An error occurred while downloading the file. Please try again.']);
         }
-
-        $submission = AssignmentSubmission::with(['assignment.subject'])
-            ->where('id', $submissionId)
-            ->firstOrFail();
-
-        // Check if the teacher is authorized to access this submission
-        if ($submission->assignment->subject->teacher_id !== $teacher->id) {
-            abort(403, 'You are not authorized to download this submission.');
-        }
-
-        if (!$submission->file_path || !Storage::disk('public')->exists($submission->file_path)) {
-            return back()->withErrors(['error' => 'File not found.']);
-        }
-
-        $studentName = $submission->student->name ?? 'Unknown Student';
-        $fileName = $studentName . '_' . $submission->assignment->title . '_' . basename($submission->file_path);
-
-        return Storage::disk('public')->download($submission->file_path, $fileName);
     }
 }

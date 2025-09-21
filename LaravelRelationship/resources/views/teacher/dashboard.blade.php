@@ -34,6 +34,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ route('teacher.email.compose') }}">
+                            <i class="fas fa-envelope me-2"></i>
+                            Send Email
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#">
                             <i class="fas fa-chart-bar me-2"></i>
                             Reports
@@ -48,10 +54,16 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">Teacher Dashboard</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageModal">
-                        <i class="fas fa-plus me-1"></i>
-                        Create / Assign
-                    </button>
+                    <div class="btn-group me-2" role="group">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#manageModal">
+                            <i class="fas fa-plus me-1"></i>
+                            Create / Assign
+                        </button>
+                        <a href="{{ route('teacher.email.compose') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-1"></i>
+                            Send Email
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -247,26 +259,59 @@
                     <div class="tab-pane fade show active" id="create-classroom" role="tabpanel">
                         <form method="POST" action="{{ route('teacher.classroom.create') }}" class="p-2">
                             @csrf
+                            
+                            <!-- Display general errors -->
+                            @if($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0">
+                                        @foreach($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                            
                             <div class="input-group">
-                                <input type="text" name="name" class="form-control" placeholder="New Classroom Name" required>
+                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="New Classroom Name" value="{{ old('name') }}" required>
                                 <button type="submit" class="btn btn-primary">Create</button>
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </form>
                     </div>
                     <div class="tab-pane fade" id="create-subject" role="tabpanel">
                         <form method="POST" action="{{ route('teacher.subject.create') }}" class="p-2">
                             @csrf
+                            
+                            <!-- Display general errors -->
+                            @if($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0">
+                                        @foreach($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                            
                             <div class="mb-3">
-                                <input type="text" name="name" class="form-control" placeholder="New Subject Name" required>
+                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="New Subject Name" value="{{ old('name') }}" required>
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <div class="mb-3">
                                 <label for="classroom_id" class="form-label">Assign to Classroom</label>
-                                <select name="classroom_id" id="classroom_id" class="form-select" required>
+                                <select name="classroom_id" id="classroom_id" class="form-select @error('classroom_id') is-invalid @enderror" required>
                                     <option value="">Select Classroom</option>
                                     @foreach($allClassrooms as $classroom)
-                                        <option value="{{ $classroom->id }}">{{ $classroom->name }}</option>
+                                        <option value="{{ $classroom->id }}" {{ old('classroom_id') == $classroom->id ? 'selected' : '' }}>{{ $classroom->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('classroom_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                             <button type="submit" class="btn btn-success">Create</button>
                         </form>

@@ -9,6 +9,7 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\StudentAssignmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EmailController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -59,6 +60,11 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::get('/teacher/attendance', [AttendanceController::class, 'index'])->name('teacher.attendance.index');
     Route::get('/teacher/attendance/{subject}', [AttendanceController::class, 'show'])->name('teacher.attendance.show');
     Route::post('/teacher/attendance/{subject}', [AttendanceController::class, 'store'])->name('teacher.attendance.store');
+
+    // Email routes (teacher)
+    Route::get('/teacher/email/compose', [EmailController::class, 'compose'])->name('teacher.email.compose');
+    Route::get('/teacher/email/get-students-by-class', [EmailController::class, 'getStudentsByClass'])->name('teacher.email.getStudentsByClass');
+    Route::post('/teacher/email/send', [EmailController::class, 'send'])->name('teacher.email.send');
 });
 
 Route::middleware(['auth', 'role:student'])->group(function () {

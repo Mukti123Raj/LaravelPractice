@@ -259,13 +259,32 @@
             <form method="POST" action="{{ route('student.assignments.submit', $assignment->id) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    
                     <div class="mb-3">
                         <label for="submission_content" class="form-label">Your Submission (Text)</label>
-                        <textarea class="form-control" id="submission_content" name="submission_content" rows="6" placeholder="Write your assignment submission here..."></textarea>
+                        <textarea class="form-control @error('submission_content') is-invalid @enderror" id="submission_content" name="submission_content" rows="6" placeholder="Write your assignment submission here...">{{ old('submission_content') }}</textarea>
+                        @error('submission_content')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-3">
                         <label for="submission_file" class="form-label">Upload File (Optional)</label>
-                        <input type="file" class="form-control" id="submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        <input type="file" class="form-control @error('submission_file') is-invalid @enderror" id="submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        @error('submission_file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        @error('submission')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
                             Supported formats: PDF, DOC, DOCX. Maximum size: 1MB
@@ -303,13 +322,33 @@
             <form method="POST" action="{{ route('student.assignments.update', $assignment->id) }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body">
+                    <!-- Display general errors -->
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    
                     <div class="mb-3">
                         <label for="update_submission_content" class="form-label">Your Submission (Text)</label>
-                        <textarea class="form-control" id="update_submission_content" name="submission_content" rows="6">{{ $submission->submission_content }}</textarea>
+                        <textarea class="form-control @error('submission_content') is-invalid @enderror" id="update_submission_content" name="submission_content" rows="6">{{ old('submission_content', $submission->submission_content) }}</textarea>
+                        @error('submission_content')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-3">
                         <label for="update_submission_file" class="form-label">Upload New File (Optional)</label>
-                        <input type="file" class="form-control" id="update_submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        <input type="file" class="form-control @error('submission_file') is-invalid @enderror" id="update_submission_file" name="submission_file" accept=".pdf,.doc,.docx">
+                        @error('submission_file')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        @error('submission')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>
                             Supported formats: PDF, DOC, DOCX. Maximum size: 1MB

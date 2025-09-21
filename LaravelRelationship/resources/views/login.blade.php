@@ -7,20 +7,39 @@
             <h2 class="mb-4">Login</h2>
             <form method="POST" action="{{ route('login') }}">
                 @csrf
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                
                 <div class="mb-3">
                     <label for="role" class="form-label">Login as</label>
-                    <select id="role" name="role" class="form-select" onchange="toggleFields()">
-                        <option value="student">Student</option>
-                        <option value="teacher">Teacher</option>
+                    <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" onchange="toggleFields()">
+                        <option value="student" {{ old('role') == 'student' ? 'selected' : '' }}>Student</option>
+                        <option value="teacher" {{ old('role') == 'teacher' ? 'selected' : '' }}>Teacher</option>
                     </select>
+                    @error('role')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required>
+                    @error('email')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
+                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
+                    @error('password')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <!-- Student specific fields (optional for login) -->
                 <div id="student-fields" style="display:block;"></div>

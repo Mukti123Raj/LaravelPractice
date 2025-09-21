@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
              'register',
         ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleExceptions::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

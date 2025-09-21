@@ -48,7 +48,7 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h1 class="h2">{{ $assignment->title }}</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="{{ route('teacher.subjects', $assignment->subject_id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('teacher.subjects.show', $assignment->subject_id) }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left me-1"></i>
                         Back to Subject
                     </a>
@@ -243,7 +243,10 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="marks_obtained{{ $item['submission']->id }}" class="form-label">Marks Obtained (Max: {{ $assignment->total_marks }})</label>
-                                        <input type="number" class="form-control" id="marks_obtained{{ $item['submission']->id }}" name="marks_obtained" min="0" max="{{ $assignment->total_marks }}" value="{{ $item['submission']->marks_obtained ?? '' }}" required>
+                                        <input type="number" class="form-control @error('marks_obtained') is-invalid @enderror" id="marks_obtained{{ $item['submission']->id }}" name="marks_obtained" min="0" max="{{ $assignment->total_marks }}" value="{{ old('marks_obtained', $item['submission']->marks_obtained ?? '') }}" required>
+                                        @error('marks_obtained')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -256,7 +259,10 @@
                             
                             <div class="mb-3">
                                 <label for="teacher_feedback{{ $item['submission']->id }}" class="form-label">Teacher Feedback</label>
-                                <textarea class="form-control" id="teacher_feedback{{ $item['submission']->id }}" name="teacher_feedback" rows="3">{{ $item['submission']->teacher_feedback ?? '' }}</textarea>
+                                <textarea class="form-control @error('teacher_feedback') is-invalid @enderror" id="teacher_feedback{{ $item['submission']->id }}" name="teacher_feedback" rows="3">{{ old('teacher_feedback', $item['submission']->teacher_feedback ?? '') }}</textarea>
+                                @error('teacher_feedback')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <div class="modal-footer">
