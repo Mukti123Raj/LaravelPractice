@@ -24,15 +24,6 @@ class Assignment extends Model
         'due_date' => 'datetime',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($assignment) {
-            event(new AssignmentCreated($assignment));
-        });
-    }
-
     public function subject()
     {
         return $this->belongsTo(Subject::class);

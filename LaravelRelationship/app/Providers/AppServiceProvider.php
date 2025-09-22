@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
+use App\Observers\AssignmentObserver;
+use App\Observers\AssignmentSubmissionObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Assignment::observe(AssignmentObserver::class);
+        AssignmentSubmission::observe(AssignmentSubmissionObserver::class);
     }
 }

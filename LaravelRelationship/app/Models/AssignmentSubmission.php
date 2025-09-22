@@ -27,22 +27,6 @@ class AssignmentSubmission extends Model
         'graded_at' => 'datetime',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($submission) {
-            // Dispatch event when assignment is submitted
-            event(new AssignmentSubmitted($submission));
-        });
-
-        static::updated(function ($submission) {
-            // Check if marks were just added (graded)
-            if ($submission->wasChanged('marks_obtained') && $submission->marks_obtained !== null) {
-                event(new AssignmentGraded($submission));
-            }
-        });
-    }
 
     public function assignment()
     {
