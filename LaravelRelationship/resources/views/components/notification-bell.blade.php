@@ -107,6 +107,11 @@
     background-color: #cce5ff;
     color: #004085;
 }
+
+.type-assignments_summary {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
 </style>
 
 <script>
@@ -335,7 +340,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const labels = {
             'assignment_created': 'New Assignment',
             'assignment_submitted': 'Submission',
-            'assignment_graded': 'Graded'
+            'assignment_graded': 'Graded',
+            'assignments_summary': 'Daily Summary'
         };
         return labels[type] || 'Notification';
     }

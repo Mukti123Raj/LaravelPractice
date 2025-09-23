@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Student;
 
 class NotificationController extends Controller
 {
@@ -13,11 +14,16 @@ class NotificationController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $notifications = $user->notifications()->latest()->paginate(10);
+        // For students, notifications are attached to Student model
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+
+        $notifications = $notifiable->notifications()->latest()->paginate(10);
         
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->unreadNotifications()->count()
+            'unread_count' => $notifiable->unreadNotifications()->count()
         ]);
     }
 
@@ -27,7 +33,10 @@ class NotificationController extends Controller
     public function unreadCount()
     {
         $user = Auth::user();
-        $count = $user->unreadNotifications()->count();
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+        $count = $notifiable->unreadNotifications()->count();
         
         return response()->json(['count' => $count]);
     }
@@ -38,7 +47,10 @@ class NotificationController extends Controller
     public function markAsRead($notificationId)
     {
         $user = Auth::user();
-        $notification = $user->notifications()->find($notificationId);
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+        $notification = $notifiable->notifications()->find($notificationId);
         
         if ($notification) {
             $notification->markAsRead();
@@ -54,7 +66,10 @@ class NotificationController extends Controller
     public function markAllAsRead()
     {
         $user = Auth::user();
-        $user->unreadNotifications()->update(['read_at' => now()]);
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+        $notifiable->unreadNotifications()->update(['read_at' => now()]);
         
         return response()->json(['success' => true]);
     }
@@ -65,7 +80,10 @@ class NotificationController extends Controller
     public function delete($notificationId)
     {
         $user = Auth::user();
-        $notification = $user->notifications()->find($notificationId);
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+        $notification = $notifiable->notifications()->find($notificationId);
         
         if ($notification) {
             $notification->delete();
@@ -81,7 +99,10 @@ class NotificationController extends Controller
     public function deleteAll()
     {
         $user = Auth::user();
-        $user->notifications()->delete();
+        $notifiable = $user && $user->role === 'student'
+            ? (Student::where('email', $user->email)->first() ?: $user)
+            : $user;
+        $notifiable->notifications()->delete();
         
         return response()->json(['success' => true]);
     }
