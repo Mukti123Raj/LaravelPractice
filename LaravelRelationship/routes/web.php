@@ -10,6 +10,8 @@ use App\Http\Controllers\StudentAssignmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmailController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -31,7 +33,32 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 
-Route::middleware(['auth', 'role:teacher'])->group(function () {
+// Email verification routes
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', function () {
+        return view('auth.verify');
+    })->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->intended('/');
+    })->middleware(['signed'])->name('verification.verify');
+
+    // Graceful redirect if someone hits the POST URL with GET
+    Route::get('/email/verification-notification', function () {
+        return redirect()->route('verification.notice');
+    })->name('verification.send.get');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        if ($request->user()->hasVerifiedEmail()) {
+            return back();
+        }
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('status', 'verification-link-sent');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
+
+Route::middleware(['auth', 'verified', 'role:teacher'])->group(function () {
     Route::get('/teacher', [TeacherController::class, 'index'])->name('teacher.index');
     Route::get('/teacher/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
     Route::get('/teacher/subjects', [TeacherController::class, 'subjects'])->name('teacher.subjects.index');
@@ -67,7 +94,7 @@ Route::middleware(['auth', 'role:teacher'])->group(function () {
     Route::post('/teacher/email/send', [EmailController::class, 'send'])->name('teacher.email.send');
 });
 
-Route::middleware(['auth', 'role:student'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
     Route::get('/student', [StudentController::class, 'index'])->name('student.index');
     Route::get('/student/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
     Route::get('/student/subjects', [StudentController::class, 'subjects'])->name('student.subjects');

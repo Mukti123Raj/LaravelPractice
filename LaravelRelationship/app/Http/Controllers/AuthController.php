@@ -9,6 +9,7 @@ use App\Models\Teacher;
 use App\Models\Student;
 use App\Models\Classroom;
 use App\Models\Subject;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -59,10 +60,11 @@ class AuthController extends Controller
             }
         }
 
+        event(new Registered($user));
+
         Auth::login($user);
-        return $user->role === 'teacher'
-            ? redirect()->route('teacher.index')
-            : redirect()->route('student.index');
+
+        return redirect()->route('verification.notice');
     }
 
     public function showLoginForm()
@@ -85,6 +87,9 @@ class AuthController extends Controller
 
         if (Auth::attempt(['email' => $credentials['email'], 'password' => $credentials['password'], 'role' => $credentials['role']])) {
             $request->session()->regenerate();
+            if (! $request->user()->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice');
+            }
             return $credentials['role'] === 'teacher'
                 ? redirect()->route('teacher.index')
                 : redirect()->route('student.index');
