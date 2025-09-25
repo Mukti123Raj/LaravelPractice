@@ -45,6 +45,9 @@
                 <div id="student-fields" style="display:block;"></div>
                 <!-- Teacher specific fields (optional for login) -->
                 <div id="teacher-fields" style="display:none;"></div>
+                <div class="mb-3 text-end">
+                    <a href="{{ route('password.request') }}">Forgot your password?</a>
+                </div>
                 <button type="submit" class="btn btn-primary w-100">Login</button>
             </form>
                         <div class="mt-3 text-center">

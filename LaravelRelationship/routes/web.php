@@ -12,6 +12,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmailController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -118,4 +120,19 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
 
     // Attendance routes (student)
     Route::get('/student/attendance', [AttendanceController::class, 'summary'])->name('student.attendance.summary');
+});
+
+// Password Reset Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])
+        ->name('password.request');
+
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->name('password.email');
+
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])
+        ->name('password.reset');
+
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])
+        ->name('password.update');
 });
