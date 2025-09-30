@@ -11,17 +11,20 @@ use App\Models\AssignmentSubmission;
 use App\Models\Student;
 use App\Models\User;
 use App\Notifications\AssignmentSubmittedNotification;
+use App\Services\AssignmentService;
 
 class StudentAssignmentController extends Controller
 {
     protected $student;
+    protected $assignmentService;
 
-    public function __construct()
+    public function __construct(AssignmentService $assignmentService)
     {
         $user = Auth::user();
         $this->student = $user
             ? Student::where('email', $user->email)->first()
             : null;
+        $this->assignmentService = $assignmentService;
     }
 
     public function index()
@@ -32,30 +35,7 @@ class StudentAssignmentController extends Controller
             }
 
             $student = $this->student;
-            $student = Cache::remember("student:{$student->id}:assignments:index", 30, function () use ($student) {
-                return Student::with(['subjects.assignments.submissions' => function ($query) use ($student) {
-                    $query->where('student_id', $student->id);
-                }])
-                    ->where('id', $student->id)
-                    ->first();
-            });
-
-            $assignments = collect();
-            foreach ($student->subjects as $subject) {
-                foreach ($subject->assignments as $assignment) {
-                    $submission = $assignment->submissions->first();
-                    $status = $assignment->getStatusForStudent($student->id);
-                    $assignments->push([
-                        'assignment' => $assignment,
-                        'submission' => $submission,
-                        'status' => $status,
-                        'subject' => $subject
-                    ]);
-                }
-            }
-
-            $assignments = $assignments->sortBy('assignment.due_date');
-
+            $assignments = $this->assignmentService->getStudentAssignments(Auth::user());
             return view('student.assignments', compact('assignments', 'student'));
         } catch (\Exception $e) {
             \Log::error('Error loading student assignments: ' . $e->getMessage(), [
@@ -118,56 +98,13 @@ class StudentAssignmentController extends Controller
                 })
                 ->firstOrFail();
 
-            if (now()->gt($assignment->due_date)) {
-                return back()->withErrors(['submission' => 'Assignment deadline has passed.']);
-            }
-
-            $existingSubmission = AssignmentSubmission::where('assignment_id', $assignmentId)
-                ->where('student_id', $student->id)
-                ->first();
-
-            if ($existingSubmission) {
-                return back()->withErrors(['submission' => 'You have already submitted this assignment.']);
-            }
-
-            $filePath = null;
-            if ($request->hasFile('submission_file')) {
-                try {
-                    $file = $request->file('submission_file');
-                    $fileName = time() . '_' . $student->id . '_' . $assignmentId . '.' . $file->getClientOriginalExtension();
-                    $filePath = $file->storeAs('assignment_submissions', $fileName, 'public');
-                } catch (\Exception $fileError) {
-                    \Log::error('File upload error: ' . $fileError->getMessage(), [
-                        'assignment_id' => $assignmentId,
-                        'student_id' => $student->id,
-                        'file_name' => $request->file('submission_file')->getClientOriginalName()
-                    ]);
-                    return back()->withErrors(['submission_file' => 'Failed to upload file. Please try again.'])
-                        ->withInput();
-                }
-            }
-
-            $submission = AssignmentSubmission::create([
-                'assignment_id' => $assignmentId,
-                'student_id' => $student->id,
-                'submission_content' => $request->submission_content,
-                'file_path' => $filePath,
-                'submitted_at' => now()
-            ]);
-
-            try {
-                $teacher = $assignment->subject->teacher;
-                $teacherUser = User::where('email', $teacher->email)->first();
-                if ($teacherUser) {
-                    $teacherUser->notify(new AssignmentSubmittedNotification($submission));
-                }
-            } catch (\Exception $notificationError) {
-                \Log::warning('Failed to send submission notification: ' . $notificationError->getMessage(), [
-                    'submission_id' => $submission->id,
-                    'assignment_id' => $assignmentId,
-                    'teacher_id' => $assignment->subject->teacher_id
-                ]);
-            }
+            $file = $request->hasFile('submission_file') ? $request->file('submission_file') : null;
+            $this->assignmentService->submitAssignment(
+                $assignment,
+                $student,
+                $request->submission_content,
+                $file
+            );
 
             return redirect()->route('student.assignments')
                 ->with('success', 'Assignment submitted successfully!');

@@ -14,14 +14,17 @@ use App\Models\User;
 use App\Notifications\AssignmentCreatedNotification;
 use App\Notifications\AssignmentSubmittedNotification;
 use App\Notifications\AssignmentGradedNotification;
+use App\Services\AssignmentService;
 
 class AssignmentController extends Controller
 {
     protected $teacher;
+    protected $assignmentService;
 
-    public function __construct()
+    public function __construct(AssignmentService $assignmentService)
     {
         $this->teacher = \App\Models\Teacher::where('email', Auth::user()->email ?? null)->first();
+        $this->assignmentService = $assignmentService;
     }
     public function index($subjectId)
     {
@@ -32,13 +35,11 @@ class AssignmentController extends Controller
                 return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
             }
 
-            $cacheKey = "teacher:{$teacher->id}:subject:{$subjectId}";
-            $subject = Cache::remember($cacheKey, 30, function () use ($subjectId, $teacher) {
-                return Subject::with(['assignments.submissions.student', 'students'])
-                    ->where('id', $subjectId)
-                    ->where('teacher_id', $teacher->id)
-                    ->firstOrFail();
-            });
+            $subjects = $this->assignmentService->getTeacherAssignments(Auth::user());
+            $subject = $subjects->firstWhere('id', (int) $subjectId);
+            if (!$subject) {
+                abort(404);
+            }
 
             return view('teacher.subjects', compact('subject', 'teacher'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -58,44 +59,11 @@ class AssignmentController extends Controller
     public function create(\App\Http\Requests\StoreAssignmentRequest $request)
     {
         try {
-            // Validation handled by StoreAssignmentRequest
-            $teacher = $this->teacher;
+            $validated = $request->validated();
+            $validated['user'] = Auth::user();
+            $assignment = $this->assignmentService->createAssignment($validated);
 
-            if (!$teacher) {
-                return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
-            }
-
-            // Verify the subject belongs to this teacher
-            $subject = Subject::where('id', $request->subject_id)
-                ->where('teacher_id', $teacher->id)
-                ->firstOrFail();
-
-            $assignment = Assignment::create([
-                'title' => $request->title,
-                'description' => $request->description,
-                'instructions' => $request->instructions,
-                'total_marks' => $request->total_marks,
-                'due_date' => $request->due_date,
-                'subject_id' => $request->subject_id,
-                'teacher_id' => $teacher->id
-            ]);
-
-            try {
-                $students = $subject->students;
-                foreach ($students as $student) {
-                    $user = User::where('email', $student->email)->first();
-                    if ($user) {
-                        $user->notify(new AssignmentCreatedNotification($assignment));
-                    }
-                }
-            } catch (\Exception $notificationError) {
-                \Log::warning('Failed to send assignment notifications: ' . $notificationError->getMessage(), [
-                    'assignment_id' => $assignment->id,
-                    'subject_id' => $subject->id
-                ]);
-            }
-
-            return redirect()->route('teacher.subjects.show', $subject->id)
+            return redirect()->route('teacher.subjects.show', $assignment->subject_id)
                 ->with('success', 'Assignment created successfully!');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('teacher.dashboard')
@@ -103,7 +71,7 @@ class AssignmentController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             \Log::error('Database error creating assignment: ' . $e->getMessage(), [
                 'subject_id' => $request->subject_id,
-                'teacher_id' => $teacher->id ?? null,
+                'teacher_id' => $this->teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
             return back()->withErrors(['error' => 'Failed to create assignment. Please check your input and try again.'])
@@ -111,7 +79,7 @@ class AssignmentController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error creating assignment: ' . $e->getMessage(), [
                 'subject_id' => $request->subject_id,
-                'teacher_id' => $teacher->id ?? null,
+                'teacher_id' => $this->teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
             return back()->withErrors(['error' => 'An unexpected error occurred while creating the assignment. Please try again.'])
@@ -170,41 +138,13 @@ class AssignmentController extends Controller
                 'teacher_feedback' => 'nullable|string'
             ]);
 
-            $teacher = Teacher::where('email', Auth::user()->email)->first();
-            
-            if (!$teacher) {
-                return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
-            }
+            $submission = AssignmentSubmission::with('assignment')->findOrFail($submissionId);
 
-            $submission = AssignmentSubmission::with('assignment')
-                ->where('id', $submissionId)
-                ->whereHas('assignment', function ($query) use ($teacher) {
-                    $query->where('teacher_id', $teacher->id);
-                })
-                ->firstOrFail();
-
-            if ($request->marks_obtained > $submission->assignment->total_marks) {
-                return back()->withErrors(['marks_obtained' => 'Marks cannot exceed total marks.']);
-            }
-
-            $submission->update([
-                'marks_obtained' => $request->marks_obtained,
-                'teacher_feedback' => $request->teacher_feedback,
-                'graded_at' => now()
-            ]);
-
-            try {
-                $student = $submission->student;
-                $user = User::where('email', $student->email)->first();
-                if ($user) {
-                    $user->notify(new AssignmentGradedNotification($submission));
-                }
-            } catch (\Exception $notificationError) {
-                \Log::warning('Failed to send grading notification: ' . $notificationError->getMessage(), [
-                    'submission_id' => $submissionId,
-                    'student_id' => $submission->student_id
-                ]);
-            }
+            $this->assignmentService->gradeSubmission(
+                $submission,
+                (int) $request->marks_obtained,
+                $request->teacher_feedback
+            );
 
             return back()->with('success', 'Assignment graded successfully!');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -215,14 +155,14 @@ class AssignmentController extends Controller
         } catch (\Illuminate\Database\QueryException $e) {
             \Log::error('Database error grading submission: ' . $e->getMessage(), [
                 'submission_id' => $submissionId,
-                'teacher_id' => $teacher->id ?? null,
+                'teacher_id' => $this->teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
             return back()->withErrors(['error' => 'Failed to grade assignment. Please try again.']);
         } catch (\Exception $e) {
             \Log::error('Error grading submission: ' . $e->getMessage(), [
                 'submission_id' => $submissionId,
-                'teacher_id' => $teacher->id ?? null,
+                'teacher_id' => $this->teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
             return back()->withErrors(['error' => 'An unexpected error occurred while grading the assignment. Please try again.']);

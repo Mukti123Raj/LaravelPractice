@@ -7,6 +7,7 @@ use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Observers\AssignmentObserver;
 use App\Observers\AssignmentSubmissionObserver;
+use App\Services\AssignmentService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +16,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(AssignmentService::class, function ($app) {
+            return new AssignmentService();
+        });
     }
 
     /**
