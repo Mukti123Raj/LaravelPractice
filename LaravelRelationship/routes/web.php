@@ -60,66 +60,66 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
-Route::middleware(['auth', 'verified', 'role:teacher'])->group(function () {
-    Route::get('/teacher', [TeacherController::class, 'index'])->name('teacher.index');
-    Route::get('/teacher/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
-    Route::get('/teacher/subjects', [TeacherController::class, 'subjects'])->name('teacher.subjects.index');
-    Route::get('/teacher/students', [TeacherController::class, 'students'])->name('teacher.students.index');
-    Route::post('/teacher/classroom/create', [TeacherController::class, 'createClassroom'])->name('teacher.classroom.create');
-    Route::post('/teacher/subject/create', [TeacherController::class, 'createSubject'])->name('teacher.subject.create');
-    Route::delete('/teacher/classroom/{classroom}', [TeacherController::class, 'deleteClassroom'])->name('teacher.classroom.delete');
+Route::prefix('teacher')->middleware(['auth', 'verified', 'role:teacher'])->group(function () {
+    Route::get('/', [TeacherController::class, 'index'])->name('teacher.index');
+    Route::get('/dashboard', [TeacherController::class, 'dashboard'])->name('teacher.dashboard');
+    Route::get('/subjects', [TeacherController::class, 'subjects'])->name('teacher.subjects.index');
+    Route::get('/students', [TeacherController::class, 'students'])->name('teacher.students.index');
+    Route::post('/classroom/create', [TeacherController::class, 'createClassroom'])->name('teacher.classroom.create');
+    Route::post('/subject/create', [TeacherController::class, 'createSubject'])->name('teacher.subject.create');
+    Route::delete('/classroom/{classroom}', [TeacherController::class, 'deleteClassroom'])->name('teacher.classroom.delete');
     
     // Assignment routes
-    Route::get('/teacher/subjects/{subject}', [AssignmentController::class, 'index'])->name('teacher.subjects.show');
-    Route::post('/teacher/assignments/create', [AssignmentController::class, 'create'])->name('teacher.assignments.create');
-    Route::get('/teacher/assignments/{assignment}', [AssignmentController::class, 'show'])->name('teacher.assignments.show');
-    Route::post('/teacher/submissions/{submission}/grade', [AssignmentController::class, 'gradeSubmission'])->name('teacher.submissions.grade');
-    Route::delete('/teacher/assignments/{assignment}', [AssignmentController::class, 'delete'])->name('teacher.assignments.delete');
-    Route::get('/teacher/submissions/{submission}/download', [TeacherController::class, 'downloadSubmission'])->name('teacher.submissions.download');
+    Route::get('/subjects/{subject}', [AssignmentController::class, 'index'])->name('teacher.subjects.show');
+    Route::post('/assignments/create', [AssignmentController::class, 'create'])->name('teacher.assignments.create');
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('teacher.assignments.show');
+    Route::post('/submissions/{submission}/grade', [AssignmentController::class, 'gradeSubmission'])->name('teacher.submissions.grade');
+    Route::delete('/assignments/{assignment}', [AssignmentController::class, 'delete'])->name('teacher.assignments.delete');
+    Route::get('/submissions/{submission}/download', [TeacherController::class, 'downloadSubmission'])->name('teacher.submissions.download');
     
     // Notification routes
-    Route::get('/teacher/notifications', [NotificationController::class, 'index'])->name('teacher.notifications');
-    Route::get('/teacher/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('teacher.notifications.unread-count');
-    Route::post('/teacher/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('teacher.notifications.mark-read');
-    Route::post('/teacher/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('teacher.notifications.mark-all-read');
-    Route::delete('/teacher/notifications/{notification}', [NotificationController::class, 'delete'])->name('teacher.notifications.delete');
-    Route::delete('/teacher/notifications', [NotificationController::class, 'deleteAll'])->name('teacher.notifications.delete-all');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('teacher.notifications');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('teacher.notifications.unread-count');
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('teacher.notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('teacher.notifications.mark-all-read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'delete'])->name('teacher.notifications.delete');
+    Route::delete('/notifications', [NotificationController::class, 'deleteAll'])->name('teacher.notifications.delete-all');
 
     // Attendance routes (teacher)
-    Route::get('/teacher/attendance', [AttendanceController::class, 'index'])->name('teacher.attendance.index');
-    Route::get('/teacher/attendance/{subject}', [AttendanceController::class, 'show'])->name('teacher.attendance.show');
-    Route::post('/teacher/attendance/{subject}', [AttendanceController::class, 'store'])->name('teacher.attendance.store');
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('teacher.attendance.index');
+    Route::get('/attendance/{subject}', [AttendanceController::class, 'show'])->name('teacher.attendance.show');
+    Route::post('/attendance/{subject}', [AttendanceController::class, 'store'])->name('teacher.attendance.store');
 
     // Email routes (teacher)
-    Route::get('/teacher/email/compose', [EmailController::class, 'compose'])->name('teacher.email.compose');
-    Route::get('/teacher/email/get-students-by-class', [EmailController::class, 'getStudentsByClass'])->name('teacher.email.getStudentsByClass');
-    Route::post('/teacher/email/send', [EmailController::class, 'send'])->name('teacher.email.send');
+    Route::get('/email/compose', [EmailController::class, 'compose'])->name('teacher.email.compose');
+    Route::get('/email/get-students-by-class', [EmailController::class, 'getStudentsByClass'])->name('teacher.email.getStudentsByClass');
+    Route::post('/email/send', [EmailController::class, 'send'])->name('teacher.email.send');
 });
 
-Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
-    Route::get('/student', [StudentController::class, 'index'])->name('student.index');
-    Route::get('/student/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
-    Route::get('/student/subjects', [StudentController::class, 'subjects'])->name('student.subjects');
-    Route::post('/student/subjects/add', [StudentController::class, 'addSubject'])->name('student.subjects.add');
-    Route::post('/student/subjects/remove', [StudentController::class, 'removeSubject'])->name('student.subjects.remove');
+Route::prefix('student')->middleware(['auth', 'verified', 'role:student'])->group(function () {
+    Route::get('/', [StudentController::class, 'index'])->name('student.index');
+    Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('student.dashboard');
+    Route::get('/subjects', [StudentController::class, 'subjects'])->name('student.subjects');
+    Route::post('/subjects/add', [StudentController::class, 'addSubject'])->name('student.subjects.add');
+    Route::post('/subjects/remove', [StudentController::class, 'removeSubject'])->name('student.subjects.remove');
     
     // Assignment routes
-    Route::get('/student/assignments', [StudentAssignmentController::class, 'index'])->name('student.assignments');
-    Route::get('/student/assignments/{assignment}', [StudentAssignmentController::class, 'show'])->name('student.assignments.show');
-    Route::post('/student/assignments/{assignment}/submit', [StudentAssignmentController::class, 'submit'])->name('student.assignments.submit');
-    Route::post('/student/assignments/{assignment}/update', [StudentAssignmentController::class, 'updateSubmission'])->name('student.assignments.update');
-    Route::get('/student/submissions/{submission}/download', [StudentAssignmentController::class, 'download'])->name('student.assignments.download');
+    Route::get('/assignments', [StudentAssignmentController::class, 'index'])->name('student.assignments');
+    Route::get('/assignments/{assignment}', [StudentAssignmentController::class, 'show'])->name('student.assignments.show');
+    Route::post('/assignments/{assignment}/submit', [StudentAssignmentController::class, 'submit'])->name('student.assignments.submit');
+    Route::post('/assignments/{assignment}/update', [StudentAssignmentController::class, 'updateSubmission'])->name('student.assignments.update');
+    Route::get('/submissions/{submission}/download', [StudentAssignmentController::class, 'download'])->name('student.assignments.download');
     
     // Notification routes
-    Route::get('/student/notifications', [NotificationController::class, 'index'])->name('student.notifications');
-    Route::get('/student/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('student.notifications.unread-count');
-    Route::post('/student/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('student.notifications.mark-read');
-    Route::post('/student/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('student.notifications.mark-all-read');
-    Route::delete('/student/notifications/{notification}', [NotificationController::class, 'delete'])->name('student.notifications.delete');
-    Route::delete('/student/notifications', [NotificationController::class, 'deleteAll'])->name('student.notifications.delete-all');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('student.notifications');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('student.notifications.unread-count');
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('student.notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('student.notifications.mark-all-read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'delete'])->name('student.notifications.delete');
+    Route::delete('/notifications', [NotificationController::class, 'deleteAll'])->name('student.notifications.delete-all');
 
     // Attendance routes (student)
-    Route::get('/student/attendance', [AttendanceController::class, 'summary'])->name('student.attendance.summary');
+    Route::get('/attendance', [AttendanceController::class, 'summary'])->name('student.attendance.summary');
 });
 
 // Password Reset Routes
@@ -135,4 +135,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('/reset-password', [NewPasswordController::class, 'store'])
         ->name('password.update');
+});
+
+Route::get('/token', function () {
+    $user = \App\Models\User::where('email', 'student@gmail.com')->first(); 
+    if ($user) {
+        $token = $user->createToken('test-token')->plainTextToken;
+        return $token;
+    }
+    return 'User not found';
 });
