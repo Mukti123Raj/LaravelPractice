@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\TeacherSubjectRule;
 
 class StoreAssignmentRequest extends FormRequest
 {
@@ -19,7 +20,7 @@ class StoreAssignmentRequest extends FormRequest
             'instructions' => 'required|string',
             'total_marks' => 'required|integer|min:1',
             'due_date' => 'required|date|after:now',
-            'subject_id' => 'required|exists:subjects,id',
+            'subject_id' => ['required', 'exists:subjects,id', new TeacherSubjectRule],
         ];
     }
 }

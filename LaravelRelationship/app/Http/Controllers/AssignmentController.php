@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Interfaces\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Assignment;
@@ -20,11 +21,13 @@ class AssignmentController extends Controller
 {
     protected $teacher;
     protected $assignmentService;
+    protected $notificationService;
 
-    public function __construct(AssignmentService $assignmentService)
+    public function __construct(AssignmentService $assignmentService, NotificationService $notificationService)
     {
         $this->teacher = \App\Models\Teacher::where('email', Auth::user()->email ?? null)->first();
         $this->assignmentService = $assignmentService;
+        $this->notificationService = $notificationService;
     }
     public function index($subjectId)
     {
@@ -62,6 +65,9 @@ class AssignmentController extends Controller
             $validated = $request->validated();
             $validated['user'] = Auth::user();
             $assignment = $this->assignmentService->createAssignment($validated);
+
+            // Send a notification using the service
+            $this->notificationService->send('A new assignment has been created!', Auth::id());
 
             return redirect()->route('teacher.subjects.show', $assignment->subject_id)
                 ->with('success', 'Assignment created successfully!');
