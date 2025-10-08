@@ -10,6 +10,12 @@ use App\Events\AssignmentSubmitted;
 use App\Listeners\SendAssignmentCreatedNotification;
 use App\Listeners\SendAssignmentGradedNotification;
 use App\Listeners\SendAssignmentSubmittedNotification;
+use App\Models\Student;
+use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
+use App\Observers\StudentObserver;
+use App\Observers\AssignmentObserver;
+use App\Observers\AssignmentSubmissionObserver;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -35,7 +41,9 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Student::observe(StudentObserver::class);
+        Assignment::observe(AssignmentObserver::class);
+        AssignmentSubmission::observe(AssignmentSubmissionObserver::class);
     }
 
     /**

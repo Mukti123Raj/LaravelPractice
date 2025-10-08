@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Events\AssignmentGraded;
 use App\Events\AssignmentSubmitted;
 use App\Models\AssignmentSubmission;
+use Illuminate\Support\Facades\Cache;
 
 class AssignmentSubmissionObserver
 {
@@ -14,6 +15,8 @@ class AssignmentSubmissionObserver
     public function created(AssignmentSubmission $submission): void
     {
         event(new AssignmentSubmitted($submission));
+        
+        Cache::tags("student:{$submission->student_id}")->flush();
     }
 
     /**

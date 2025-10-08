@@ -7,23 +7,30 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Student;
 use App\Models\Subject;
+use App\Interfaces\StudentRepositoryInterface;
 
 class StudentController extends Controller
 {
+    protected $studentRepository;
+
+    public function __construct(StudentRepositoryInterface $studentRepository)
+    {
+        $this->studentRepository = $studentRepository;
+    }
     public function dashboard()
     {
         $user = Auth::user();
-        $student = Cache::remember("student:{$user->id}:dashboard", 30, function () use ($user) {
-            return Student::with(['classroom', 'subjects.teacher', 'subjects.assignments.submissions' => function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            }])
-                ->where('email', $user->email)
-                ->first();
+        $student = Cache::tags(["student:{$user->id}", "assignments"])->remember("student:{$user->id}:dashboard", 30, function () use ($user) {
+            return $this->studentRepository->getStudentByEmail($user->email);
         });
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
         }
+
+        $student->load(['classroom', 'subjects.teacher', 'subjects.assignments.submissions' => function ($query) use ($user) {
+            $query->where('student_id', $user->id);
+        }]);
 
         // Get assignment statistics
         $assignments = collect();
@@ -62,9 +69,11 @@ class StudentController extends Controller
     {
         $user = Auth::user();
         $student = Cache::remember("student:{$user->id}:subjects", 30, function () use ($user) {
-            return Student::with(['classroom', 'subjects.teacher'])
-                ->where('email', $user->email)
-                ->first();
+            $student = $this->studentRepository->getStudentByEmail($user->email);
+            if ($student) {
+                $student->load(['classroom', 'subjects.teacher']);
+            }
+            return $student;
         });
 
         if (!$student) {
@@ -90,7 +99,7 @@ class StudentController extends Controller
         ]);
 
         $user = Auth::user();
-        $student = Student::where('email', $user->email)->first();
+        $student = $this->studentRepository->getStudentByEmail($user->email);
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
@@ -121,7 +130,7 @@ class StudentController extends Controller
         ]);
 
         $user = Auth::user();
-        $student = Student::where('email', $user->email)->first();
+        $student = $this->studentRepository->getStudentByEmail($user->email);
 
         if (!$student) {
             return redirect()->route('login')->withErrors(['error' => 'Student record not found.']);
@@ -133,5 +142,68 @@ class StudentController extends Controller
         $student->subjects()->detach($request->subject_id);
 
         return redirect()->route('student.subjects')->with('success', 'Successfully unenrolled from ' . $subject->name . '!');
+    }
+
+    public function indexAll()
+    {
+        $students = $this->studentRepository->getAllStudents();
+        return view('admin.students.index', compact('students'));
+    }
+
+    public function show($id)
+    {
+        $student = $this->studentRepository->getStudentById($id);
+        
+        if (!$student) {
+            return redirect()->back()->withErrors(['error' => 'Student not found.']);
+        }
+
+        return view('admin.students.show', compact('student'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:students,email',
+            'classroom_id' => 'required|exists:classrooms,id'
+        ]);
+
+        $studentDetails = $request->only(['name', 'email', 'classroom_id']);
+        $student = $this->studentRepository->createStudent($studentDetails);
+
+        return redirect()->route('admin.students.show', $student->id)
+            ->with('success', 'Student created successfully!');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:students,email,' . $id,
+            'classroom_id' => 'required|exists:classrooms,id'
+        ]);
+
+        $newDetails = $request->only(['name', 'email', 'classroom_id']);
+        $student = $this->studentRepository->updateStudent($id, $newDetails);
+
+        if (!$student) {
+            return redirect()->back()->withErrors(['error' => 'Student not found.']);
+        }
+
+        return redirect()->route('admin.students.show', $student->id)
+            ->with('success', 'Student updated successfully!');
+    }
+
+    public function destroy($id)
+    {
+        $deleted = $this->studentRepository->deleteStudent($id);
+
+        if (!$deleted) {
+            return redirect()->back()->withErrors(['error' => 'Student not found.']);
+        }
+
+        return redirect()->route('admin.students.index')
+            ->with('success', 'Student deleted successfully!');
     }
 }
