@@ -16,7 +16,10 @@ class AssignmentSubmissionObserver
     {
         event(new AssignmentSubmitted($submission));
         
-        Cache::tags("student:{$submission->student_id}")->flush();
+        // Clear specific cache keys for this student
+        Cache::forget("student:{$submission->student_id}:dashboard");
+        Cache::forget("student:{$submission->student_id}:assignments:index");
+        Cache::forget("student:{$submission->student_id}:subjects");
     }
 
     /**

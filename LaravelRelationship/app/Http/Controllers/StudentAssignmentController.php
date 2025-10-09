@@ -27,7 +27,7 @@ class StudentAssignmentController extends Controller
         $this->assignmentService = $assignmentService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         try {
             if (!$this->student) {
@@ -35,13 +35,81 @@ class StudentAssignmentController extends Controller
             }
 
             $student = $this->student;
-            $assignments = $this->assignmentService->getStudentAssignments(Auth::user());
+            
+            // Check if search query is provided
+            if ($request->has('search') && !empty(trim($request->input('search')))) {
+                $searchQuery = trim($request->input('search'));
+                
+                try {
+                    // Load student with subjects relationship
+                    $student->load('subjects');
+                    
+                    // Get student's enrolled subject IDs
+                    $enrolledSubjectIds = $student->subjects->pluck('id')->toArray();
+                    
+                    if (empty($enrolledSubjectIds)) {
+                        // Student has no enrolled subjects
+                        $assignments = collect();
+                    } else {
+                        // Use Scout to search assignments
+                        $searchResults = Assignment::search($searchQuery)
+                            ->whereIn('subject_id', $enrolledSubjectIds)
+                            ->get();
+                        
+                        // Load necessary relationships for search results
+                        $searchResults->load(['subject', 'submissions' => function ($query) use ($student) {
+                            $query->where('student_id', $student->id);
+                        }]);
+                        
+                        // Transform search results to match the expected format
+                        $assignments = collect();
+                        foreach ($searchResults as $assignment) {
+                            $submission = $assignment->submissions->first();
+                            $status = $assignment->getStatusForStudent($student->id);
+                            $subject = $assignment->subject;
+                            
+                            $assignments->push([
+                                'assignment' => $assignment,
+                                'submission' => $submission,
+                                'status' => $status,
+                                'subject' => $subject,
+                            ]);
+                        }
+                        
+                        $assignments = $assignments->sortBy('assignment.due_date');
+                    }
+                } catch (\Exception $searchError) {
+                    // If Scout/MeiliSearch is not available, fall back to regular search
+                    \Log::warning('Scout search failed, falling back to regular search: ' . $searchError->getMessage());
+                    
+                    // Use the existing service method and filter by search query
+                    $allAssignments = $this->assignmentService->getStudentAssignments(Auth::user());
+                    $assignments = $allAssignments->filter(function ($item) use ($searchQuery) {
+                        $assignment = $item['assignment'];
+                        return stripos($assignment->title, $searchQuery) !== false || 
+                               stripos($assignment->description, $searchQuery) !== false;
+                    });
+                }
+            } else {
+                // Use the existing service method for regular assignment listing
+                $assignments = $this->assignmentService->getStudentAssignments(Auth::user());
+            }
+            
             return view('student.assignments', compact('assignments', 'student'));
         } catch (\Exception $e) {
             \Log::error('Error loading student assignments: ' . $e->getMessage(), [
                 'student_id' => $this->student->id ?? null,
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'search_query' => $request->input('search') ?? null,
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            // If it's a search request, stay on the assignments page
+            if ($request->has('search')) {
+                return redirect()->route('student.assignments')
+                    ->withErrors(['error' => 'Search failed. Please try again or contact support if the issue persists.']);
+            }
+            
             return redirect()->route('student.dashboard')
                 ->withErrors(['error' => 'An error occurred while loading assignments. Please try again.']);
         }

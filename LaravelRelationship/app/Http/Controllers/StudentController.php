@@ -20,7 +20,7 @@ class StudentController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $student = Cache::tags(["student:{$user->id}", "assignments"])->remember("student:{$user->id}:dashboard", 30, function () use ($user) {
+        $student = Cache::remember("student:{$user->id}:dashboard", 30, function () use ($user) {
             return $this->studentRepository->getStudentByEmail($user->email);
         });
 

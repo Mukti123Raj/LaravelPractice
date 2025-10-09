@@ -46,9 +46,53 @@
         <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">My Assignments</h1>
+                <h1 class="h2">
+                    My Assignments
+                    @if(request('search'))
+                        <small class="text-muted">- Search Results for "{{ request('search') }}"</small>
+                    @endif
+                </h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <span class="badge bg-info fs-6">{{ $assignments->count() }} Total Assignments</span>
+                    <span class="badge bg-info fs-6">{{ $assignments->count() }} 
+                        @if(request('search'))
+                            Search Results
+                        @else
+                            Total Assignments
+                        @endif
+                    </span>
+                </div>
+            </div>
+
+            <!-- Search Form -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('student.assignments') }}" class="d-flex">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" 
+                                           name="search" 
+                                           class="form-control" 
+                                           placeholder="Search assignments by title or description..." 
+                                           value="{{ request('search') }}"
+                                           aria-label="Search assignments">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search me-1"></i>
+                                        Search
+                                    </button>
+                                    @if(request('search'))
+                                        <a href="{{ route('student.assignments') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times me-1"></i>
+                                            Clear
+                                        </a>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -152,8 +196,17 @@
                     <div class="col-12">
                         <div class="text-center py-5">
                             <i class="fas fa-tasks fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">No assignments yet</h4>
-                            <p class="text-muted">You don't have any assignments from your enrolled subjects.</p>
+                            @if(request('search'))
+                                <h4 class="text-muted">No assignments found</h4>
+                                <p class="text-muted">No assignments match your search criteria "{{ request('search') }}".</p>
+                                <a href="{{ route('student.assignments') }}" class="btn btn-primary">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    View All Assignments
+                                </a>
+                            @else
+                                <h4 class="text-muted">No assignments yet</h4>
+                                <p class="text-muted">You don't have any assignments from your enrolled subjects.</p>
+                            @endif
                         </div>
                     </div>
                 @endforelse
