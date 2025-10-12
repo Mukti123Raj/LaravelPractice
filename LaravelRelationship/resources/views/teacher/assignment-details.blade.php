@@ -128,7 +128,7 @@
             </div>
 
             <!-- Student Submissions -->
-            <div class="row">
+            <div class="row mb-4">
                 <div class="col-12">
                     <div class="card shadow">
                         <div class="card-header py-3">
@@ -193,6 +193,61 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-info">
+                                <i class="fas fa-comments me-2"></i>
+                                Comments ({{ $assignment->comments->count() }})
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- Add Comment Form -->
+                            <form method="POST" action="{{ route('comments.store', $assignment->id) }}" class="mb-4">
+                                @csrf
+                                <div class="mb-3">
+                                    <label for="comment_body" class="form-label">Add a Comment</label>
+                                    <textarea class="form-control @error('body') is-invalid @enderror" id="comment_body" name="body" rows="3" placeholder="Write your comment here..." required>{{ old('body') }}</textarea>
+                                    @error('body')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-comment me-1"></i>
+                                    Post Comment
+                                </button>
+                            </form>
+
+                            <!-- Comments List -->
+                            @if($assignment->comments->count() > 0)
+                                <div class="comments-list">
+                                    @foreach($assignment->comments->sortBy('created_at') as $comment)
+                                        <div class="comment-item border-bottom pb-3 mb-3">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <strong class="me-2">{{ $comment->user->name }}</strong>
+                                                        <small class="text-muted">{{ $comment->created_at->format('M d, Y H:i') }}</small>
+                                                    </div>
+                                                    <p class="mb-0">{{ $comment->body }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-comment-slash fa-2x mb-2"></i>
+                                    <p>No comments yet. Be the first to comment!</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -45,6 +45,11 @@ class Assignment extends Model
         return $this->hasManyThrough(Student::class, AssignmentSubmission::class, 'assignment_id', 'id', 'id', 'student_id');
     }
 
+    public function comments()
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
     public function getStatusForStudent($studentId)
     {
         $submission = $this->submissions()->where('student_id', $studentId)->first();

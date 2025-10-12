@@ -126,7 +126,7 @@ class StudentAssignmentController extends Controller
             $assignment = Cache::remember("student:{$student->id}:assignment:{$assignmentId}", 30, function () use ($assignmentId, $student) {
                 return Assignment::with(['subject', 'submissions' => function ($query) use ($student) {
                     $query->where('student_id', $student->id);
-                }])
+                }, 'comments.user'])
                     ->where('id', $assignmentId)
                     ->whereHas('subject.students', function ($query) use ($student) {
                         $query->where('student_id', $student->id);

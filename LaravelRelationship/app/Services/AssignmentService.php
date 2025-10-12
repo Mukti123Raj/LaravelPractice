@@ -107,10 +107,15 @@ class AssignmentService
         return $assignments->sortBy('assignment.due_date');
     }
 
-    public function submitAssignment(Assignment $assignment, Student $student, string $content, ?UploadedFile $file): AssignmentSubmission
+    public function submitAssignment(Assignment $assignment, Student $student, ?string $content, ?UploadedFile $file): AssignmentSubmission
     {
         if (now()->gt($assignment->due_date)) {
             throw new \RuntimeException('Assignment deadline has passed.');
+        }
+
+        // Ensure at least one of content or file is provided
+        if (empty($content) && !$file) {
+            throw new \RuntimeException('You must provide either text content or a file for your submission.');
         }
 
         $isEnrolled = $assignment->subject

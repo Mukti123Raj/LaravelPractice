@@ -10,6 +10,7 @@ use App\Http\Controllers\StudentAssignmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\CommentController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -58,6 +59,9 @@ Route::middleware('auth')->group(function () {
         $request->user()->sendEmailVerificationNotification();
         return back()->with('status', 'verification-link-sent');
     })->middleware(['throttle:6,1'])->name('verification.send');
+
+    // Comment routes
+    Route::post('/assignments/{assignment}/comments', [CommentController::class, 'store'])->name('comments.store');
 });
 
 Route::prefix('teacher')->middleware(['auth', 'verified', 'role:teacher'])->group(function () {

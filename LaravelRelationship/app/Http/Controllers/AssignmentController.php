@@ -62,6 +62,8 @@ class AssignmentController extends Controller
     public function create(\App\Http\Requests\StoreAssignmentRequest $request)
     {
         try {
+            $this->authorize('create', Assignment::class);
+            
             $validated = $request->validated();
             $validated['user'] = Auth::user();
             $assignment = $this->assignmentService->createAssignment($validated);
@@ -71,6 +73,9 @@ class AssignmentController extends Controller
 
             return redirect()->route('teacher.subjects.show', $assignment->subject_id)
                 ->with('success', 'Assignment created successfully!');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'You do not have permission to create assignments.']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('teacher.dashboard')
                 ->withErrors(['error' => 'Subject not found or you do not have permission to create assignments for it.']);
@@ -93,18 +98,20 @@ class AssignmentController extends Controller
         }
     }
 
-    public function show($assignmentId)
+    public function show(Assignment $assignment)
     {
         try {
+            $this->authorize('view', $assignment);
+
             $teacher = $this->teacher;
 
             if (!$teacher) {
                 return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
             }
 
-            $assignment = Cache::remember("teacher:{$teacher->id}:assignment:{$assignmentId}", 30, function () use ($assignmentId, $teacher) {
-                return Assignment::with(['subject', 'submissions.student'])
-                    ->where('id', $assignmentId)
+            $assignment = Cache::remember("teacher:{$teacher->id}:assignment:{$assignment->id}", 30, function () use ($assignment, $teacher) {
+                return Assignment::with(['subject', 'submissions.student', 'comments.user'])
+                    ->where('id', $assignment->id)
                     ->where('teacher_id', $teacher->id)
                     ->firstOrFail();
             });
@@ -122,12 +129,15 @@ class AssignmentController extends Controller
             }
 
             return view('teacher.assignment-details', compact('assignment', 'studentSubmissions'));
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'You do not have permission to view this assignment.']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('teacher.dashboard')
                 ->withErrors(['error' => 'Assignment not found or you do not have permission to access it.']);
         } catch (\Exception $e) {
             \Log::error('Error accessing assignment: ' . $e->getMessage(), [
-                'assignment_id' => $assignmentId,
+                'assignment_id' => $assignment->id,
                 'teacher_id' => $teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
@@ -145,6 +155,8 @@ class AssignmentController extends Controller
             ]);
 
             $submission = AssignmentSubmission::with('assignment')->findOrFail($submissionId);
+            
+            $this->authorize('gradeSubmission', $submission->assignment);
 
             $this->assignmentService->gradeSubmission(
                 $submission,
@@ -153,6 +165,9 @@ class AssignmentController extends Controller
             );
 
             return back()->with('success', 'Assignment graded successfully!');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'You do not have permission to grade this assignment.']);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors());
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -175,37 +190,38 @@ class AssignmentController extends Controller
         }
     }
 
-    public function delete($assignmentId)
+    public function delete(Assignment $assignment)
     {
         try {
+            $this->authorize('delete', $assignment);
+
             $teacher = Teacher::where('email', Auth::user()->email)->first();
             
             if (!$teacher) {
                 return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
             }
 
-            $assignment = Assignment::where('id', $assignmentId)
-                ->where('teacher_id', $teacher->id)
-                ->firstOrFail();
-
             $subjectId = $assignment->subject_id;
             $assignment->delete();
 
             return redirect()->route('teacher.subjects.show', $subjectId)
                 ->with('success', 'Assignment deleted successfully!');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'You do not have permission to delete this assignment.']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('teacher.dashboard')
                 ->withErrors(['error' => 'Assignment not found or you do not have permission to delete it.']);
         } catch (\Illuminate\Database\QueryException $e) {
             \Log::error('Database error deleting assignment: ' . $e->getMessage(), [
-                'assignment_id' => $assignmentId,
+                'assignment_id' => $assignment->id,
                 'teacher_id' => $teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
             return back()->withErrors(['error' => 'Failed to delete assignment. Please try again.']);
         } catch (\Exception $e) {
             \Log::error('Error deleting assignment: ' . $e->getMessage(), [
-                'assignment_id' => $assignmentId,
+                'assignment_id' => $assignment->id,
                 'teacher_id' => $teacher->id ?? null,
                 'user_id' => Auth::id()
             ]);
