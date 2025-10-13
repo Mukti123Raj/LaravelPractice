@@ -88,6 +88,11 @@ class AssignmentPolicy
      */
     public function restore(User $user, Assignment $assignment): bool
     {
+        if ($user->role === 'teacher') {
+            $teacher = Teacher::where('email', $user->email)->first();
+            return $teacher && $assignment->teacher_id === $teacher->id;
+        }
+
         return false;
     }
 
@@ -96,6 +101,11 @@ class AssignmentPolicy
      */
     public function forceDelete(User $user, Assignment $assignment): bool
     {
+        if ($user->role === 'teacher') {
+            $teacher = Teacher::where('email', $user->email)->first();
+            return $teacher && $assignment->teacher_id === $teacher->id;
+        }
+
         return false;
     }
 }

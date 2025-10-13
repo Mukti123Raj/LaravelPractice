@@ -76,6 +76,11 @@ Route::prefix('teacher')->middleware(['auth', 'verified', 'role:teacher'])->grou
     // Assignment routes
     Route::get('/subjects/{subject}', [AssignmentController::class, 'index'])->name('teacher.subjects.show');
     Route::post('/assignments/create', [AssignmentController::class, 'create'])->name('teacher.assignments.create');
+    
+    Route::get('/assignments/trashed', [AssignmentController::class, 'trashed'])->name('teacher.assignments.trashed');
+    Route::post('/assignments/{id}/restore', [AssignmentController::class, 'restore'])->name('teacher.assignments.restore');
+    Route::delete('/assignments/{id}/force-delete', [AssignmentController::class, 'forceDelete'])->name('teacher.assignments.forceDelete');
+    
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('teacher.assignments.show');
     Route::post('/submissions/{submission}/grade', [AssignmentController::class, 'gradeSubmission'])->name('teacher.submissions.grade');
     Route::delete('/assignments/{assignment}', [AssignmentController::class, 'delete'])->name('teacher.assignments.delete');

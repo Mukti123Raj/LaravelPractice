@@ -61,6 +61,10 @@
                         <i class="fas fa-arrow-left me-1"></i>
                         Back to Subjects
                     </a>
+                    <a href="{{ route('teacher.assignments.trashed') }}" class="btn btn-outline-warning me-2">
+                        <i class="fas fa-trash me-1"></i>
+                        View Trash
+                    </a>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal">
                         <i class="fas fa-plus me-1"></i>
                         Create Assignment

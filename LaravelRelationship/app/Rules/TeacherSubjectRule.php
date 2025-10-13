@@ -22,7 +22,10 @@ class TeacherSubjectRule implements ValidationRule
             return;
         }
 
-        if ($subject->teacher_id !== Auth::id()) {
+        // Get the teacher record for the authenticated user
+        $teacher = \App\Models\Teacher::where('email', Auth::user()->email)->first();
+        
+        if (!$teacher || $subject->teacher_id !== $teacher->id) {
             $fail('You are not authorized to create an assignment for this subject.');
         }
     }

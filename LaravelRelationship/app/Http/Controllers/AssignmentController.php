@@ -205,7 +205,7 @@ class AssignmentController extends Controller
             $assignment->delete();
 
             return redirect()->route('teacher.subjects.show', $subjectId)
-                ->with('success', 'Assignment deleted successfully!');
+                ->with('success', 'Assignment moved to trash.');
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             return redirect()->route('teacher.dashboard')
                 ->withErrors(['error' => 'You do not have permission to delete this assignment.']);
@@ -227,5 +227,65 @@ class AssignmentController extends Controller
             ]);
             return back()->withErrors(['error' => 'An unexpected error occurred while deleting the assignment. Please try again.']);
         }
+    }
+
+    /**
+     * Show the trashed assignments.
+     */
+    public function trashed()
+    {
+        // Get the teacher record for the authenticated user
+        $teacher = \App\Models\Teacher::where('email', auth()->user()->email)->first();
+        
+        if (!$teacher) {
+            return redirect()->route('teacher.dashboard')
+                ->withErrors(['error' => 'Teacher profile not found.']);
+        }
+
+        $trashedAssignments = Assignment::onlyTrashed()
+            ->whereIn('subject_id', $teacher->subjects->pluck('id'))
+            ->with('subject')
+            ->get();
+            
+        return view('teacher.assignments.trashed', compact('trashedAssignments'));
+    }
+
+    /**
+     * Restore a soft-deleted assignment.
+     */
+    public function restore($id)
+    {
+        try {
+            $assignment = Assignment::onlyTrashed()->findOrFail($id);
+            $this->authorize('restore', $assignment);
+            $assignment->restore();
+
+            return redirect()->route('teacher.subjects.show', $assignment->subject_id)->with('success', 'Assignment restored successfully.');
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return redirect()->route('teacher.assignments.trashed')
+                ->withErrors(['error' => 'You do not have permission to restore this assignment.']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('teacher.assignments.trashed')
+                ->withErrors(['error' => 'Assignment not found.']);
+        } catch (\Exception $e) {
+            \Log::error('Error restoring assignment: ' . $e->getMessage(), [
+                'assignment_id' => $id,
+                'user_id' => Auth::id()
+            ]);
+            return redirect()->route('teacher.assignments.trashed')
+                ->withErrors(['error' => 'An error occurred while restoring the assignment. Please try again.']);
+        }
+    }
+
+    /**
+     * Permanently delete an assignment.
+     */
+    public function forceDelete($id)
+    {
+        $assignment = Assignment::onlyTrashed()->findOrFail($id);
+        $this->authorize('forceDelete', $assignment);
+        $assignment->forceDelete();
+
+        return redirect()->route('teacher.assignments.trashed')->with('success', 'Assignment permanently deleted.');
     }
 }
