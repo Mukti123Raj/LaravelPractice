@@ -102,7 +102,7 @@ Route::prefix('teacher')->middleware(['auth', 'verified', 'role:teacher'])->grou
     // Email routes (teacher)
     Route::get('/email/compose', [EmailController::class, 'compose'])->name('teacher.email.compose');
     Route::get('/email/get-students-by-class', [EmailController::class, 'getStudentsByClass'])->name('teacher.email.getStudentsByClass');
-    Route::post('/email/send', [EmailController::class, 'send'])->name('teacher.email.send');
+    Route::post('/email/send', \App\Http\Controllers\SendBulkEmailController::class)->name('teacher.email.send');
 });
 
 Route::prefix('student')->middleware(['auth', 'verified', 'role:student'])->group(function () {
@@ -115,8 +115,8 @@ Route::prefix('student')->middleware(['auth', 'verified', 'role:student'])->grou
     // Assignment routes
     Route::get('/assignments', [StudentAssignmentController::class, 'index'])->name('student.assignments');
     Route::get('/assignments/{assignment}', [StudentAssignmentController::class, 'show'])->name('student.assignments.show');
-    Route::post('/assignments/{assignment}/submit', [StudentAssignmentController::class, 'submit'])->name('student.assignments.submit');
-    Route::post('/assignments/{assignment}/update', [StudentAssignmentController::class, 'updateSubmission'])->name('student.assignments.update');
+    Route::post('/assignments/{assignment}/submit', \App\Http\Controllers\SubmitAssignmentController::class)->name('student.assignments.submit');
+    Route::post('/assignments/{assignment}/update', \App\Http\Controllers\UpdateAssignmentSubmissionController::class)->name('student.assignments.update');
     Route::get('/submissions/{submission}/download', [StudentAssignmentController::class, 'download'])->name('student.assignments.download');
     
     // Notification routes
