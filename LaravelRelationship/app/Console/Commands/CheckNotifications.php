@@ -30,30 +30,32 @@ class CheckNotifications extends Command
         $this->info('Checking all notifications...');
         
         // Check student notifications
-        $students = Student::with('notifications')->get();
-        foreach ($students as $student) {
-            if ($student->notifications->count() > 0) {
-                $this->info("Student: {$student->name} ({$student->email})");
-                foreach ($student->notifications as $notification) {
-                    $this->line("  - [{$notification->data['type']}] {$notification->data['message']}");
-                    $this->line("    Created: {$notification->created_at}");
+        Student::with('notifications')->chunkById(100, function ($students) {
+            foreach ($students as $student) {
+                if ($student->notifications->count() > 0) {
+                    $this->info("Student: {$student->name} ({$student->email})");
+                    foreach ($student->notifications as $notification) {
+                        $this->line("  - [{$notification->data['type']}] {$notification->data['message']}");
+                        $this->line("    Created: {$notification->created_at}");
+                    }
+                    $this->line('');
                 }
-                $this->line('');
             }
-        }
+        });
         
         // Check teacher notifications
-        $teachers = Teacher::with('notifications')->get();
-        foreach ($teachers as $teacher) {
-            if ($teacher->notifications->count() > 0) {
-                $this->info("Teacher: {$teacher->name} ({$teacher->email})");
-                foreach ($teacher->notifications as $notification) {
-                    $this->line("  - [{$notification->data['type']}] {$notification->data['message']}");
-                    $this->line("    Created: {$notification->created_at}");
+        Teacher::with('notifications')->chunkById(100, function ($teachers) {
+            foreach ($teachers as $teacher) {
+                if ($teacher->notifications->count() > 0) {
+                    $this->info("Teacher: {$teacher->name} ({$teacher->email})");
+                    foreach ($teacher->notifications as $notification) {
+                        $this->line("  - [{$notification->data['type']}] {$notification->data['message']}");
+                        $this->line("    Created: {$notification->created_at}");
+                    }
+                    $this->line('');
                 }
-                $this->line('');
             }
-        }
+        });
         
         $this->info('Notification check completed!');
     }
