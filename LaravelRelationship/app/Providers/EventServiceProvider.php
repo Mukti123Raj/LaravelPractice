@@ -7,15 +7,19 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 use App\Events\AssignmentCreated;
 use App\Events\AssignmentGraded;
 use App\Events\AssignmentSubmitted;
+use App\Events\CommentCreated;
 use App\Listeners\SendAssignmentCreatedNotification;
 use App\Listeners\SendAssignmentGradedNotification;
 use App\Listeners\SendAssignmentSubmittedNotification;
+use App\Listeners\SendNewCommentNotification;
 use App\Models\Student;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
+use App\Models\Comment;
 use App\Observers\StudentObserver;
 use App\Observers\AssignmentObserver;
 use App\Observers\AssignmentSubmissionObserver;
+use App\Observers\CommentObserver;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -34,6 +38,9 @@ class EventServiceProvider extends ServiceProvider
         AssignmentSubmitted::class => [
             SendAssignmentSubmittedNotification::class,
         ],
+        CommentCreated::class => [
+            SendNewCommentNotification::class,
+        ],
     ];
 
     /**
@@ -44,6 +51,7 @@ class EventServiceProvider extends ServiceProvider
         Student::observe(StudentObserver::class);
         Assignment::observe(AssignmentObserver::class);
         AssignmentSubmission::observe(AssignmentSubmissionObserver::class);
+        Comment::observe(CommentObserver::class);
     }
 
     /**
