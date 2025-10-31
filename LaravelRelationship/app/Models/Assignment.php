@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 use App\Events\AssignmentCreated;
 
 class Assignment extends Model
 {
-    use HasFactory, SoftDeletes, Searchable;
+    use HasFactory, SoftDeletes, Searchable, Prunable;
 
     protected $fillable = [
         'title',
@@ -80,5 +81,16 @@ class Assignment extends Model
             'title' => $this->title,
             'description' => $this->description,
         ];
+    }
+
+    /**
+     * Get the prunable model query.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function prunable()
+    {
+        return static::where('due_date', '<', now())
+            ->whereDoesntHave('submissions');
     }
 }

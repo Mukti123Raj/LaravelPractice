@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AssignmentService::class, function ($app) {
             return new AssignmentService();
         });
+
+        $this->app->singleton('assignment.service', function ($app) {
+            return $app->make(AssignmentService::class);
+        });
     }
 
     /**

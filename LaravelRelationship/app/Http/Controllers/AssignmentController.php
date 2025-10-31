@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Interfaces\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use App\Models\Assignment;
+use App\Models\Assignment as AssignmentModel;
 use App\Models\AssignmentSubmission;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -15,18 +15,16 @@ use App\Models\User;
 use App\Notifications\AssignmentCreatedNotification;
 use App\Notifications\AssignmentSubmittedNotification;
 use App\Notifications\AssignmentGradedNotification;
-use App\Services\AssignmentService;
+use App\Facades\Assignment as AssignmentFacade;
 
 class AssignmentController extends Controller
 {
     protected $teacher;
-    protected $assignmentService;
     protected $notificationService;
 
-    public function __construct(AssignmentService $assignmentService, NotificationService $notificationService)
+    public function __construct(NotificationService $notificationService)
     {
         $this->teacher = \App\Models\Teacher::where('email', Auth::user()->email ?? null)->first();
-        $this->assignmentService = $assignmentService;
         $this->notificationService = $notificationService;
     }
     public function index($subjectId)
@@ -38,7 +36,7 @@ class AssignmentController extends Controller
                 return redirect()->route('login')->withErrors(['error' => 'Teacher profile not found.']);
             }
 
-            $subjects = $this->assignmentService->getTeacherAssignments(Auth::user());
+            $subjects = AssignmentFacade::getTeacherAssignments(Auth::user());
             $subject = $subjects->firstWhere('id', (int) $subjectId);
             if (!$subject) {
                 abort(404);
@@ -62,11 +60,11 @@ class AssignmentController extends Controller
     public function create(\App\Http\Requests\StoreAssignmentRequest $request)
     {
         try {
-            $this->authorize('create', Assignment::class);
+            $this->authorize('create', AssignmentModel::class);
             
             $validated = $request->validated();
             $validated['user'] = Auth::user();
-            $assignment = $this->assignmentService->createAssignment($validated);
+            $assignment = AssignmentFacade::createAssignment($validated);
 
             // Send a notification using the service
             $this->notificationService->send('A new assignment has been created!', Auth::id());
@@ -98,7 +96,7 @@ class AssignmentController extends Controller
         }
     }
 
-    public function show(Assignment $assignment)
+    public function show(AssignmentModel $assignment)
     {
         try {
             $this->authorize('view', $assignment);
@@ -110,7 +108,7 @@ class AssignmentController extends Controller
             }
 
             $assignment = Cache::remember("teacher:{$teacher->id}:assignment:{$assignment->id}", 30, function () use ($assignment, $teacher) {
-                return Assignment::with(['subject', 'submissions.student', 'comments.user'])
+                return AssignmentModel::with(['subject', 'submissions.student', 'comments.user'])
                     ->where('id', $assignment->id)
                     ->where('teacher_id', $teacher->id)
                     ->firstOrFail();
@@ -158,7 +156,7 @@ class AssignmentController extends Controller
             
             $this->authorize('gradeSubmission', $submission->assignment);
 
-            $this->assignmentService->gradeSubmission(
+            AssignmentFacade::gradeSubmission(
                 $submission,
                 (int) $request->marks_obtained,
                 $request->teacher_feedback

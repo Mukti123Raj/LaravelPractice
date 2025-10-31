@@ -13,3 +13,7 @@ Schedule::command('assignments:notify-pending')
     ->timezone('Asia/Kolkata')
     ->dailyAt('00:00')
     ->withoutOverlapping();
+
+// Schedule: prune models daily
+Schedule::command('model:prune')
+    ->daily();
